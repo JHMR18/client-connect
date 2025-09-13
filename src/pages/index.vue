@@ -13,7 +13,7 @@
                   </div>
                   <h1 class="text-h3 font-weight-bold text-error mb-2">Client Connect</h1>
                   <p class="text-h6 text-medium-emphasis mb-6">
-                    Loan Management System
+                    Loan Management System test
                   </p>
                   <p class="text-body-2 text-medium-emphasis">
                     Sign in to your account to continue
@@ -146,7 +146,7 @@ const handleLogin = async () => {
   try {
     // Attempt login
     await login(email.value, password.value);
-    
+
     // Check user type and navigate accordingly
     if (loginType.value === "client") {
       // Navigate to client dashboard
@@ -159,7 +159,7 @@ const handleLogin = async () => {
     console.error("Login error:", error);
     errorMessage.value =
       error?.message || "Login failed. Please check your credentials and try again.";
-    
+
     // Clear session data on login failure
     await logout();
   } finally {
@@ -184,7 +184,7 @@ const requestLogin = handleLogin;
   left: 0;
   right: 0;
   bottom: 0;
-  background: 
+  background:
     radial-gradient(circle at 25% 25%, rgba(220, 38, 38, 0.1) 0%, transparent 50%),
     radial-gradient(circle at 75% 75%, rgba(185, 28, 28, 0.08) 0%, transparent 50%),
     radial-gradient(circle at 50% 50%, rgba(239, 68, 68, 0.05) 0%, transparent 50%);
@@ -195,7 +195,7 @@ const requestLogin = handleLogin;
   background: rgba(255, 255, 255, 0.98) !important;
   backdrop-filter: blur(10px);
   border: 1px solid rgba(220, 38, 38, 0.1);
-  box-shadow: 
+  box-shadow:
     0 20px 25px -5px rgba(0, 0, 0, 0.1),
     0 10px 10px -5px rgba(0, 0, 0, 0.04),
     0 0 0 1px rgba(220, 38, 38, 0.05) !important;
@@ -204,7 +204,7 @@ const requestLogin = handleLogin;
 
 .login-card:hover {
   transform: translateY(-2px);
-  box-shadow: 
+  box-shadow:
     0 25px 50px -12px rgba(0, 0, 0, 0.25),
     0 0 0 1px rgba(220, 38, 38, 0.1) !important;
 }
@@ -321,7 +321,7 @@ const requestLogin = handleLogin;
   .login-card {
     margin: 1rem;
   }
-  
+
   :deep(.v-card-text) {
     padding: 1.5rem !important;
   }
@@ -331,15 +331,15 @@ const requestLogin = handleLogin;
   .login-card {
     margin: 0.5rem;
   }
-  
+
   :deep(.v-card-text) {
     padding: 1rem !important;
   }
-  
+
   .app-icon {
     padding: 12px;
   }
-  
+
   :deep(.app-icon .v-icon) {
     font-size: 48px !important;
   }
