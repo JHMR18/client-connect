@@ -1,13 +1,6 @@
 <template>
   <v-app>
-    <v-navigation-drawer
-      v-model="drawer"
-      app
-      permanent
-      color="#1a1a1a"
-      theme="dark"
-      width="280"
-    >
+    <v-navigation-drawer v-model="drawer" app permanent color="#1a1a1a" theme="dark" width="280">
       <div class="pa-4">
         <div class="d-flex align-center mb-6">
           <div class="app-icon me-3">
@@ -63,13 +56,7 @@
       <template #append>
         <div class="pa-4">
           <v-divider class="mb-4" />
-          <v-btn
-            color="error"
-            variant="text"
-            prepend-icon="mdi-logout"
-            block
-            @click="handleLogout"
-          >
+          <v-btn color="error" variant="text" prepend-icon="mdi-logout" block @click="handleLogout">
             Logout
           </v-btn>
         </div>
@@ -107,11 +94,7 @@
         <v-card>
           <v-card-text>
             <!-- Progress Stepper -->
-            <v-stepper
-              v-model="currentStep"
-              alt-labels
-              class="elevation-0"
-            >
+            <v-stepper v-model="currentStep" alt-labels class="elevation-0">
               <v-stepper-header>
                 <v-stepper-item
                   :complete="currentStep > 1"
@@ -164,17 +147,17 @@
                       <v-col cols="12">
                         <h3 class="text-h6 mb-4">Personal Information</h3>
                       </v-col>
-                      
+
                       <v-col cols="12" md="4">
                         <v-text-field
                           v-model="application.firstName"
                           label="First Name"
                           variant="outlined"
-                          :rules="[v => !!v || 'First name is required']"
+                          :rules="[(v) => !!v || 'First name is required']"
                           required
                         />
                       </v-col>
-                      
+
                       <v-col cols="12" md="4">
                         <v-text-field
                           v-model="application.middleName"
@@ -182,13 +165,13 @@
                           variant="outlined"
                         />
                       </v-col>
-                      
+
                       <v-col cols="12" md="4">
                         <v-text-field
                           v-model="application.lastName"
                           label="Last Name"
                           variant="outlined"
-                          :rules="[v => !!v || 'Last name is required']"
+                          :rules="[(v) => !!v || 'Last name is required']"
                           required
                         />
                       </v-col>
@@ -207,7 +190,7 @@
                           label="Date of Birth"
                           type="date"
                           variant="outlined"
-                          :rules="[v => !!v || 'Date of birth is required']"
+                          :rules="[(v) => !!v || 'Date of birth is required']"
                           required
                         />
                       </v-col>
@@ -218,7 +201,7 @@
                           :items="['Male', 'Female', 'Other']"
                           label="Gender"
                           variant="outlined"
-                          :rules="[v => !!v || 'Gender is required']"
+                          :rules="[(v) => !!v || 'Gender is required']"
                           required
                         />
                       </v-col>
@@ -229,7 +212,7 @@
                           :items="['Single', 'Married', 'Divorced', 'Widowed', 'Separated']"
                           label="Civil Status"
                           variant="outlined"
-                          :rules="[v => !!v || 'Civil status is required']"
+                          :rules="[(v) => !!v || 'Civil status is required']"
                           required
                         />
                       </v-col>
@@ -239,7 +222,7 @@
                           v-model="application.citizenship"
                           label="Citizenship"
                           variant="outlined"
-                          :rules="[v => !!v || 'Citizenship is required']"
+                          :rules="[(v) => !!v || 'Citizenship is required']"
                           required
                         />
                       </v-col>
@@ -249,7 +232,11 @@
                           v-model="application.spouseName"
                           label="Spouse Name"
                           variant="outlined"
-                          :rules="application.civilStatus === 'Married' ? [v => !!v || 'Spouse name is required'] : []"
+                          :rules="
+                            application.civilStatus === 'Married'
+                              ? [(v) => !!v || 'Spouse name is required']
+                              : []
+                          "
                         />
                       </v-col>
 
@@ -259,8 +246,9 @@
                           label="Mobile Number"
                           variant="outlined"
                           :rules="[
-                            v => !!v || 'Mobile number is required',
-                            v => /^[0-9+\-\s()]+$/.test(v) || 'Please enter a valid mobile number'
+                            (v) => !!v || 'Mobile number is required',
+                            (v) =>
+                              /^[0-9+\-\s()]+$/.test(v) || 'Please enter a valid mobile number',
                           ]"
                           required
                         />
@@ -272,7 +260,7 @@
                           label="Present Address"
                           variant="outlined"
                           rows="3"
-                          :rules="[v => !!v || 'Present address is required']"
+                          :rules="[(v) => !!v || 'Present address is required']"
                           required
                         />
                       </v-col>
@@ -286,15 +274,11 @@
                     <v-col cols="12">
                       <h3 class="text-h6 mb-4">Family Information</h3>
                     </v-col>
-                    
+
                     <v-col cols="12">
                       <div class="d-flex justify-space-between align-center mb-4">
                         <h4 class="text-subtitle-1">Children</h4>
-                        <v-btn
-                          color="primary"
-                          prepend-icon="mdi-plus"
-                          @click="addChild"
-                        >
+                        <v-btn color="red" prepend-icon="mdi-plus" @click="addChild">
                           Add Child
                         </v-btn>
                       </div>
@@ -302,7 +286,9 @@
                       <div v-if="application.children.length === 0" class="text-center pa-8">
                         <v-icon size="64" class="text-disabled mb-4">mdi-account-child</v-icon>
                         <p class="text-h6 text-disabled">No children added</p>
-                        <p class="text-caption text-disabled">Click "Add Child" to add family members</p>
+                        <p class="text-caption text-disabled">
+                          Click "Add Child" to add family members
+                        </p>
                       </div>
 
                       <v-card
@@ -330,7 +316,7 @@
                                 v-model="child.name"
                                 label="Name"
                                 variant="outlined"
-                                :rules="[v => !!v || 'Name is required']"
+                                :rules="[(v) => !!v || 'Name is required']"
                                 required
                               />
                             </v-col>
@@ -355,8 +341,8 @@
                                 type="number"
                                 variant="outlined"
                                 :rules="[
-                                  v => v >= 0 || 'Age must be positive',
-                                  v => v <= 30 || 'Please verify age'
+                                  (v) => v >= 0 || 'Age must be positive',
+                                  (v) => v <= 30 || 'Please verify age',
                                 ]"
                               />
                             </v-col>
@@ -380,7 +366,7 @@
                           v-model="application.businessName"
                           label="Business Name"
                           variant="outlined"
-                          :rules="[v => !!v || 'Business name is required']"
+                          :rules="[(v) => !!v || 'Business name is required']"
                           required
                         />
                       </v-col>
@@ -390,7 +376,7 @@
                           v-model="application.businessType"
                           label="Business Type"
                           variant="outlined"
-                          :rules="[v => !!v || 'Business type is required']"
+                          :rules="[(v) => !!v || 'Business type is required']"
                           required
                         />
                       </v-col>
@@ -401,7 +387,7 @@
                           label="Business Address"
                           variant="outlined"
                           rows="3"
-                          :rules="[v => !!v || 'Business address is required']"
+                          :rules="[(v) => !!v || 'Business address is required']"
                           required
                         />
                       </v-col>
@@ -421,7 +407,7 @@
                           type="email"
                           variant="outlined"
                           :rules="[
-                            v => !v || /.+@.+\..+/.test(v) || 'Please enter a valid email'
+                            (v) => !v || /.+@.+\..+/.test(v) || 'Please enter a valid email',
                           ]"
                         />
                       </v-col>
@@ -433,8 +419,8 @@
                           type="number"
                           variant="outlined"
                           :rules="[
-                            v => !!v || 'Years in business is required',
-                            v => v >= 0 || 'Years must be positive'
+                            (v) => !!v || 'Years in business is required',
+                            (v) => v >= 0 || 'Years must be positive',
                           ]"
                           required
                         />
@@ -446,7 +432,7 @@
                           label="Number of Employees"
                           type="number"
                           variant="outlined"
-                          :rules="[v => v >= 0 || 'Number must be positive']"
+                          :rules="[(v) => v >= 0 || 'Number must be positive']"
                         />
                       </v-col>
                     </v-row>
@@ -469,7 +455,7 @@
                           item-value="id"
                           label="Loan Product"
                           variant="outlined"
-                          :rules="[v => !!v || 'Loan product is required']"
+                          :rules="[(v) => !!v || 'Loan product is required']"
                           required
                         />
                       </v-col>
@@ -481,9 +467,9 @@
                           type="number"
                           variant="outlined"
                           :rules="[
-                            v => !!v || 'Loan amount is required',
-                            v => v > 0 || 'Loan amount must be positive',
-                            v => v <= 1000000 || 'Maximum loan amount is ₱1,000,000'
+                            (v) => !!v || 'Loan amount is required',
+                            (v) => v > 0 || 'Loan amount must be positive',
+                            (v) => v <= 1000000 || 'Maximum loan amount is ₱1,000,000',
                           ]"
                           required
                         />
@@ -496,9 +482,9 @@
                           type="number"
                           variant="outlined"
                           :rules="[
-                            v => !!v || 'Loan term is required',
-                            v => v > 0 || 'Term must be positive',
-                            v => v <= 60 || 'Maximum term is 60 months'
+                            (v) => !!v || 'Loan term is required',
+                            (v) => v > 0 || 'Term must be positive',
+                            (v) => v <= 60 || 'Maximum term is 60 months',
                           ]"
                           required
                         />
@@ -509,7 +495,7 @@
                           v-model="application.purpose"
                           label="Purpose of Loan"
                           variant="outlined"
-                          :rules="[v => !!v || 'Purpose is required']"
+                          :rules="[(v) => !!v || 'Purpose is required']"
                           required
                         />
                       </v-col>
@@ -525,8 +511,8 @@
                           type="number"
                           variant="outlined"
                           :rules="[
-                            v => !!v || 'Monthly income is required',
-                            v => v > 0 || 'Income must be positive'
+                            (v) => !!v || 'Monthly income is required',
+                            (v) => v > 0 || 'Income must be positive',
                           ]"
                           required
                         />
@@ -539,8 +525,8 @@
                           type="number"
                           variant="outlined"
                           :rules="[
-                            v => !!v || 'Monthly expenses is required',
-                            v => v >= 0 || 'Expenses cannot be negative'
+                            (v) => !!v || 'Monthly expenses is required',
+                            (v) => v >= 0 || 'Expenses cannot be negative',
                           ]"
                           required
                         />
@@ -584,7 +570,7 @@
                             variant="outlined"
                             prepend-icon=""
                             prepend-inner-icon="mdi-paperclip"
-                            :rules="[v => !!v || 'Valid ID is required']"
+                            :rules="[(v) => !!v || 'Valid ID is required']"
                             required
                           />
                         </v-card-text>
@@ -606,7 +592,7 @@
                             variant="outlined"
                             prepend-icon=""
                             prepend-inner-icon="mdi-paperclip"
-                            :rules="[v => !!v || 'Business permit is required']"
+                            :rules="[(v) => !!v || 'Business permit is required']"
                             required
                           />
                         </v-card-text>
@@ -628,7 +614,7 @@
                             variant="outlined"
                             prepend-icon=""
                             prepend-inner-icon="mdi-paperclip"
-                            :rules="[v => !!v || 'Photo is required']"
+                            :rules="[(v) => !!v || 'Photo is required']"
                             required
                           />
                         </v-card-text>
@@ -680,7 +666,11 @@
                             </v-col>
                             <v-col cols="12" md="6">
                               <h4 class="text-subtitle-1 mb-2">Loan Details</h4>
-                              <p><strong>Amount:</strong> ₱{{ application.loanAmount?.toLocaleString() }}</p>
+                              <p>
+                                <strong>Amount:</strong> ₱{{
+                                  application.loanAmount?.toLocaleString()
+                                }}
+                              </p>
                               <p><strong>Term:</strong> {{ application.termMonths }} months</p>
                               <p><strong>Purpose:</strong> {{ application.purpose }}</p>
                             </v-col>
@@ -693,12 +683,12 @@
                       <v-checkbox
                         v-model="application.termsAccepted"
                         color="primary"
-                        :rules="[v => !!v || 'You must accept the terms and conditions']"
+                        :rules="[(v) => !!v || 'You must accept the terms and conditions']"
                         required
                       >
                         <template #label>
                           <div>
-                            I agree to the 
+                            I agree to the
                             <a href="#" @click.prevent="showTerms = true">terms and conditions</a>
                             and confirm that all information provided is accurate.
                           </div>
@@ -711,29 +701,13 @@
 
               <!-- Navigation Buttons -->
               <v-card-actions class="justify-space-between pa-6">
-                <v-btn
-                  v-if="currentStep > 1"
-                  color="secondary"
-                  variant="outlined"
-                  @click="currentStep--"
-                >
+                <v-btn v-if="currentStep > 1" color="red" variant="outlined" @click="currentStep--">
                   Previous
                 </v-btn>
                 <v-spacer v-else />
 
-                <v-btn
-                  v-if="currentStep < 6"
-                  color="primary"
-                  @click="nextStep"
-                >
-                  Next
-                </v-btn>
-                <v-btn
-                  v-else
-                  color="success"
-                  :loading="submitting"
-                  @click="submitApplication"
-                >
+                <v-btn v-if="currentStep < 6" color="red" @click="nextStep"> Next </v-btn>
+                <v-btn v-else color="red" :loading="submitting" @click="submitApplication">
                   Submit Application
                 </v-btn>
               </v-card-actions>
@@ -749,7 +723,9 @@
         <v-card-title>Terms and Conditions</v-card-title>
         <v-card-text>
           <div class="terms-content">
-            <p>By submitting this loan application, you agree to the following terms and conditions:</p>
+            <p>
+              By submitting this loan application, you agree to the following terms and conditions:
+            </p>
             <ul>
               <li>All information provided is accurate and complete</li>
               <li>You authorize credit checks and verification of information</li>
@@ -769,169 +745,301 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuth } from '@/utils/useAuth'
+import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { useAuth } from "@/utils/useAuth";
+import {
+  useLoanApplications,
+  useLoanProducts,
+  useChildren,
+  useUserProfile,
+} from "@/utils/useSmartLoanApi";
+import { getCurrentUser } from "@/utils/useDirectus";
 
-const router = useRouter()
-const { logout } = useAuth()
+const router = useRouter();
+const { logout } = useAuth();
 
-const drawer = ref(true)
-const currentStep = ref(1)
-const submitting = ref(false)
-const showTerms = ref(false)
+const drawer = ref(true);
+const currentStep = ref(1);
+const submitting = ref(false);
+const showTerms = ref(false);
+const currentUser = ref(null);
 
 // Form refs
-const personalForm = ref()
-const businessForm = ref()
-const financialForm = ref()
+const personalForm = ref();
+const businessForm = ref();
+const financialForm = ref();
+
+// API composables
+const { createApplication } = useLoanApplications();
+const { getProducts } = useLoanProducts();
+const { createChild } = useChildren();
+const { updateUserProfile, getUserProfile } = useUserProfile();
 
 // Loan products
-const loanProducts = ref([
-  { id: 1, name: 'Business Loan', minAmount: 10000, maxAmount: 1000000 },
-  { id: 2, name: 'Personal Loan', minAmount: 5000, maxAmount: 200000 },
-  { id: 3, name: 'Emergency Loan', minAmount: 1000, maxAmount: 50000 },
-  { id: 4, name: 'Equipment Loan', minAmount: 25000, maxAmount: 500000 }
-])
+const loanProducts = ref([]);
 
 // Application data
 const application = ref({
   // Personal Information
-  firstName: '',
-  middleName: '',
-  lastName: '',
-  nickname: '',
-  dob: '',
-  gender: '',
-  civilStatus: '',
-  citizenship: 'Filipino',
-  spouseName: '',
-  mobileNumber: '',
-  presentAddress: '',
-  
+  firstName: "",
+  middleName: "",
+  lastName: "",
+  nickname: "",
+  dob: "",
+  gender: "",
+  civilStatus: "",
+  citizenship: "Filipino",
+  spouseName: "",
+  mobileNumber: "",
+  presentAddress: "",
+
   // Family Information
   children: [] as Array<{
-    name: string
-    school: string
-    grade: string
-    age: number
+    name: string;
+    school: string;
+    grade: string;
+    age: number;
   }>,
-  
+
   // Business Information
-  businessName: '',
-  businessType: '',
-  businessAddress: '',
-  businessPhone: '',
-  businessEmail: '',
-  yearsInBusiness: '',
-  numberOfEmployees: '',
-  
+  businessName: "",
+  businessType: "",
+  businessAddress: "",
+  businessPhone: "",
+  businessEmail: "",
+  yearsInBusiness: "",
+  numberOfEmployees: "",
+
   // Financial Information
   loanProduct: null,
   loanAmount: null,
   termMonths: null,
-  purpose: '',
+  purpose: "",
   monthlyIncome: null,
   monthlyExpenses: null,
-  
+
   // Requirements
   validId: null,
   businessPermit: null,
   photo: null,
   coMakerId: null,
-  
+
   // Terms
-  termsAccepted: false
-})
+  termsAccepted: false,
+});
 
 // Computed properties
 const fullName = computed(() => {
-  const names = [application.value.firstName, application.value.middleName, application.value.lastName]
-  return names.filter(name => name).join(' ')
-})
+  const names = [
+    application.value.firstName,
+    application.value.middleName,
+    application.value.lastName,
+  ];
+  return names.filter((name) => name).join(" ");
+});
 
 const netIncome = computed(() => {
-  const income = application.value.monthlyIncome || 0
-  const expenses = application.value.monthlyExpenses || 0
-  return income - expenses
-})
+  const income = application.value.monthlyIncome || 0;
+  const expenses = application.value.monthlyExpenses || 0;
+  return income - expenses;
+});
 
 const netIncomeColor = computed(() => {
-  if (netIncome.value > 10000) return 'success'
-  if (netIncome.value > 0) return 'warning'
-  return 'error'
-})
+  if (netIncome.value > 10000) return "success";
+  if (netIncome.value > 0) return "warning";
+  return "error";
+});
 
 // Methods
 const addChild = () => {
   application.value.children.push({
-    name: '',
-    school: '',
-    grade: '',
-    age: 0
-  })
-}
+    name: "",
+    school: "",
+    grade: "",
+    age: 0,
+  });
+};
 
 const removeChild = (index: number) => {
-  application.value.children.splice(index, 1)
-}
+  application.value.children.splice(index, 1);
+};
 
 const nextStep = async () => {
   // Validate current step
-  let isValid = true
-  
+  let isValid = true;
+
   switch (currentStep.value) {
     case 1:
       if (personalForm.value) {
-        const { valid } = await personalForm.value.validate()
-        isValid = valid
+        const { valid } = await personalForm.value.validate();
+        isValid = valid;
       }
-      break
+      break;
     case 3:
       if (businessForm.value) {
-        const { valid } = await businessForm.value.validate()
-        isValid = valid
+        const { valid } = await businessForm.value.validate();
+        isValid = valid;
       }
-      break
+      break;
     case 4:
       if (financialForm.value) {
-        const { valid } = await financialForm.value.validate()
-        isValid = valid
+        const { valid } = await financialForm.value.validate();
+        isValid = valid;
       }
-      break
+      break;
   }
-  
+
   if (isValid) {
-    currentStep.value++
+    currentStep.value++;
   }
-}
+};
 
 const submitApplication = async () => {
-  submitting.value = true
-  
+  submitting.value = true;
+
   try {
-    // Here you would submit to Directus API
-    await new Promise(resolve => setTimeout(resolve, 2000)) // Simulate API call
-    
-    // Show success message
-    alert('Application submitted successfully!')
-    router.push('/client/dashboard')
+    if (!currentUser.value) {
+      throw new Error("User not authenticated");
+    }
+
+    // Calculate age from date of birth
+    const dob = new Date(application.value.dob);
+    const today = new Date();
+    const age =
+      today.getFullYear() -
+      dob.getFullYear() -
+      (today.getMonth() < dob.getMonth() ||
+      (today.getMonth() === dob.getMonth() && today.getDate() < dob.getDate())
+        ? 1
+        : 0);
+
+    // First, update user profile with personal information
+    const userUpdateData = {
+      first_name: application.value.firstName,
+      middle_name: application.value.middleName || null,
+      last_name: application.value.lastName,
+      nickname: application.value.nickname || null,
+      dob: application.value.dob,
+      age: age,
+      gender: application.value.gender,
+      civil_status: application.value.civilStatus,
+      citizenship: application.value.citizenship,
+      spouse_name: application.value.spouseName || null,
+      present_address: application.value.presentAddress,
+      mobile_number: application.value.mobileNumber,
+    };
+
+    await updateUserProfile(currentUser.value.id, userUpdateData);
+
+    // Prepare loan application data (only loan-specific fields)
+    const loanData = {
+      client: currentUser.value.id, // Reference to user ID (Many-to-One)
+      // The error suggests it's One-to-Many, so try the correct O2M format
+      loan_product: {
+        create: [
+          {
+            // Use correct junction table field name
+            loan_products_id: parseInt(application.value.loanProduct),
+          },
+        ],
+        update: [],
+        delete: [],
+      },
+      principal_amount: parseFloat(application.value.loanAmount),
+      term_months: parseInt(application.value.termMonths),
+      status: "pending",
+      application_date: new Date().toISOString().split("T")[0], // Date only
+
+      // Business Information
+      business_name: application.value.businessName || null,
+      business_type: application.value.businessType || null,
+      business_address: application.value.businessAddress || null,
+      business_phone: application.value.businessPhone || null,
+      business_email: application.value.businessEmail || null,
+      years_in_business: application.value.yearsInBusiness
+        ? parseInt(application.value.yearsInBusiness)
+        : null,
+      number_of_employees: application.value.numberOfEmployees
+        ? parseInt(application.value.numberOfEmployees)
+        : null,
+
+      // Financial Information
+      monthly_income: parseFloat(application.value.monthlyIncome),
+      monthly_expenses: parseFloat(application.value.monthlyExpenses),
+      purpose: application.value.purpose,
+    };
+
+    console.log("Submitting loan data:", loanData);
+
+    // Create the loan application
+    const createdApplication = await createApplication(loanData);
+
+    // Create children records if any
+    if (application.value.children.length > 0) {
+      const childPromises = application.value.children.map((child) =>
+        createChild({
+          client: currentUser.value.id,
+          name: child.name,
+          school: child.school || null,
+          grade: child.grade || null,
+          age: child.age || null,
+        }),
+      );
+      await Promise.all(childPromises);
+    }
+
+    // Handle file uploads for requirements
+    // Note: File uploads would need additional implementation with Directus files API
+
+    alert("Application submitted successfully! You will be notified once reviewed.");
+    router.push("/client/dashboard");
   } catch (error) {
-    console.error('Error submitting application:', error)
-    alert('Error submitting application. Please try again.')
+    console.error("Error submitting application:", error);
+    alert("Error submitting application. Please try again.");
   } finally {
-    submitting.value = false
+    submitting.value = false;
   }
-}
+};
 
 const handleLogout = async () => {
-  await logout()
-  router.push('/')
-}
+  await logout();
+  router.push("/");
+};
 
-onMounted(() => {
-  // Load any initial data
-})
+onMounted(async () => {
+  try {
+    // Get current user
+    currentUser.value = await getCurrentUser();
+
+    // Load loan products
+    const products = await getProducts();
+    loanProducts.value = products;
+
+    // Load existing user profile data to populate form
+    if (currentUser.value?.id) {
+      const userProfile = await getUserProfile(currentUser.value.id);
+
+      // Populate form with existing data
+      if (userProfile) {
+        application.value.firstName = userProfile.first_name || "";
+        application.value.middleName = userProfile.middle_name || "";
+        application.value.lastName = userProfile.last_name || "";
+        application.value.nickname = userProfile.nickname || "";
+        // Format date of birth to yyyy-MM-dd format for date input
+        application.value.dob = userProfile.dob ? userProfile.dob.split("T")[0] : "";
+        application.value.gender = userProfile.gender || "";
+        application.value.civilStatus = userProfile.civil_status || "";
+        application.value.citizenship = userProfile.citizenship || "Filipino";
+        application.value.spouseName = userProfile.spouse_name || "";
+        application.value.presentAddress = userProfile.present_address || "";
+        application.value.mobileNumber = userProfile.mobile_number || "";
+      }
+    }
+  } catch (error) {
+    console.error("Error loading initial data:", error);
+  }
+});
 </script>
 
 <style scoped>

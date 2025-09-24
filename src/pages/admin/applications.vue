@@ -1,13 +1,6 @@
 <template>
   <v-app>
-    <v-navigation-drawer
-      v-model="drawer"
-      app
-      permanent
-      color="primary"
-      theme="dark"
-      width="280"
-    >
+    <v-navigation-drawer v-model="drawer" app permanent color="primary" theme="dark" width="280">
       <div class="pa-4">
         <div class="d-flex align-center mb-6">
           <img src="/cct-logo.png" alt="Smart Loan" class="nav-logo me-3" />
@@ -27,7 +20,7 @@
             :active="$route.path === '/admin/dashboard'"
             @click="$router.push('/admin/dashboard')"
           />
-          
+
           <v-list-group value="loans" :model-value="true">
             <template #activator="{ props }">
               <v-list-item
@@ -63,7 +56,7 @@
             :active="$route.path === '/admin/clients'"
             @click="$router.push('/admin/clients')"
           />
-          
+
           <v-list-item
             prepend-icon="mdi-credit-card"
             title="Payments"
@@ -90,11 +83,7 @@
 
           <v-list-group value="reports">
             <template #activator="{ props }">
-              <v-list-item
-                v-bind="props"
-                prepend-icon="mdi-chart-box"
-                title="Reports"
-              />
+              <v-list-item v-bind="props" prepend-icon="mdi-chart-box" title="Reports" />
             </template>
             <v-list-item
               title="Financial Reports"
@@ -115,13 +104,7 @@
       <template #append>
         <div class="pa-4">
           <v-divider class="mb-4" />
-          <v-btn
-            color="error"
-            variant="text"
-            prepend-icon="mdi-logout"
-            block
-            @click="handleLogout"
-          >
+          <v-btn color="error" variant="text" prepend-icon="mdi-logout" block @click="handleLogout">
             Logout
           </v-btn>
         </div>
@@ -152,9 +135,7 @@
         <div class="d-flex justify-space-between align-center mb-8">
           <div>
             <h1 class="text-h4 font-weight-bold mb-2">Loan Applications</h1>
-            <p class="text-subtitle-1 text-medium-emphasis">
-              Review and manage loan applications
-            </p>
+            <p class="text-subtitle-1 text-medium-emphasis">Review and manage loan applications</p>
           </div>
 
           <v-btn
@@ -225,11 +206,7 @@
           >
             <!-- Status chip -->
             <template #item.status="{ item }">
-              <v-chip
-                :color="getStatusColor(item.status)"
-                size="small"
-                variant="flat"
-              >
+              <v-chip :color="getStatusColor(item.status)" size="small" variant="flat">
                 {{ item.status }}
               </v-chip>
             </template>
@@ -247,13 +224,17 @@
             <!-- Actions -->
             <template #item.actions="{ item }">
               <div class="d-flex gap-2">
+                <v-btn color="primary" size="small" variant="tonal" @click="viewApplication(item)">
+                  <v-icon>mdi-eye</v-icon>
+                </v-btn>
                 <v-btn
-                  color="primary"
+                  v-if="item.status === 'pending'"
+                  color="info"
                   size="small"
                   variant="tonal"
-                  @click="viewApplication(item)"
+                  @click="openRiskAssessment(item)"
                 >
-                  <v-icon>mdi-eye</v-icon>
+                  <v-icon>mdi-scale-balance</v-icon>
                 </v-btn>
                 <v-btn
                   v-if="item.status === 'pending'"
@@ -298,17 +279,14 @@
               ID: {{ selectedApplication.id }}
             </p>
           </div>
-          <v-chip
-            :color="getStatusColor(selectedApplication.status)"
-            variant="flat"
-          >
+          <v-chip :color="getStatusColor(selectedApplication.status)" variant="flat">
             {{ selectedApplication.status }}
           </v-chip>
         </v-card-title>
-        
+
         <v-divider />
 
-        <v-card-text style="max-height: 600px;">
+        <v-card-text style="max-height: 600px">
           <v-row>
             <!-- Personal Information -->
             <v-col cols="12" lg="6">
@@ -349,7 +327,9 @@
                     </div>
                     <div class="info-item">
                       <span class="label">Amount:</span>
-                      <span class="value">₱{{ selectedApplication.loanAmount.toLocaleString() }}</span>
+                      <span class="value"
+                        >₱{{ selectedApplication.loanAmount.toLocaleString() }}</span
+                      >
                     </div>
                     <div class="info-item">
                       <span class="label">Term:</span>
@@ -372,16 +352,24 @@
                   <div class="info-grid">
                     <div class="info-item">
                       <span class="label">Monthly Income:</span>
-                      <span class="value">₱{{ selectedApplication.monthlyIncome.toLocaleString() }}</span>
+                      <span class="value"
+                        >₱{{ selectedApplication.monthlyIncome.toLocaleString() }}</span
+                      >
                     </div>
                     <div class="info-item">
                       <span class="label">Monthly Expenses:</span>
-                      <span class="value">₱{{ selectedApplication.monthlyExpenses.toLocaleString() }}</span>
+                      <span class="value"
+                        >₱{{ selectedApplication.monthlyExpenses.toLocaleString() }}</span
+                      >
                     </div>
                     <div class="info-item">
                       <span class="label">Net Income:</span>
                       <span class="value" :class="getNetIncomeClass(selectedApplication)">
-                        ₱{{ (selectedApplication.monthlyIncome - selectedApplication.monthlyExpenses).toLocaleString() }}
+                        ₱{{
+                          (
+                            selectedApplication.monthlyIncome - selectedApplication.monthlyExpenses
+                          ).toLocaleString()
+                        }}
                       </span>
                     </div>
                   </div>
@@ -418,7 +406,12 @@
                 <v-card-title class="text-h6">Submitted Documents</v-card-title>
                 <v-card-text>
                   <v-row>
-                    <v-col cols="6" md="3" v-for="doc in selectedApplication.documents" :key="doc.type">
+                    <v-col
+                      cols="6"
+                      md="3"
+                      v-for="doc in selectedApplication.documents"
+                      :key="doc.type"
+                    >
                       <v-card class="document-card" variant="tonal" color="primary">
                         <v-card-text class="text-center">
                           <v-icon size="32" class="mb-2">{{ getDocumentIcon(doc.type) }}</v-icon>
@@ -468,12 +461,188 @@
         <v-card-actions>
           <v-spacer />
           <v-btn @click="showConfirm = false">Cancel</v-btn>
-          <v-btn
-            :color="confirmAction === 'approve' ? 'success' : 'error'"
-            @click="executeAction"
-          >
-            {{ confirmAction === 'approve' ? 'Approve' : 'Reject' }}
+          <v-btn :color="confirmAction === 'approve' ? 'success' : 'error'" @click="executeAction">
+            {{ confirmAction === "approve" ? "Approve" : "Reject" }}
           </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Risk Assessment Dialog -->
+    <v-dialog v-model="showRiskAssessment" max-width="800" scrollable>
+      <v-card v-if="selectedApplication">
+        <v-card-title class="d-flex justify-space-between align-center">
+          <div>
+            <h3>Risk Assessment</h3>
+            <p class="text-subtitle-2 text-medium-emphasis mb-0">
+              {{ selectedApplication.clientName }} - {{ selectedApplication.loanProduct }}
+            </p>
+          </div>
+        </v-card-title>
+
+        <v-divider />
+
+        <v-card-text style="max-height: 500px">
+          <v-form ref="riskForm">
+            <v-row>
+              <v-col cols="12">
+                <h4 class="text-h6 mb-4">4Cs Assessment</h4>
+                <p class="text-body-2 text-medium-emphasis mb-4">
+                  Rate each factor from 1 (Poor) to 10 (Excellent)
+                </p>
+              </v-col>
+
+              <!-- Capacity -->
+              <v-col cols="12" md="6">
+                <v-card variant="outlined" class="pa-4">
+                  <h5 class="text-subtitle-1 mb-2">
+                    <v-icon class="me-2" color="primary">mdi-cash-multiple</v-icon>
+                    Capacity
+                  </h5>
+                  <p class="text-caption mb-3">Ability to repay the loan</p>
+                  <v-slider
+                    v-model="riskAssessment.capacity_score"
+                    :min="1"
+                    :max="10"
+                    :step="1"
+                    show-ticks="always"
+                    tick-size="4"
+                    thumb-label
+                    color="primary"
+                  />
+                  <div class="d-flex justify-space-between text-caption">
+                    <span>Poor (1)</span>
+                    <span>Excellent (10)</span>
+                  </div>
+                </v-card>
+              </v-col>
+
+              <!-- Character -->
+              <v-col cols="12" md="6">
+                <v-card variant="outlined" class="pa-4">
+                  <h5 class="text-subtitle-1 mb-2">
+                    <v-icon class="me-2" color="primary">mdi-account-heart</v-icon>
+                    Character
+                  </h5>
+                  <p class="text-caption mb-3">Credit history and willingness to pay</p>
+                  <v-slider
+                    v-model="riskAssessment.character_score"
+                    :min="1"
+                    :max="10"
+                    :step="1"
+                    show-ticks="always"
+                    tick-size="4"
+                    thumb-label
+                    color="primary"
+                  />
+                  <div class="d-flex justify-space-between text-caption">
+                    <span>Poor (1)</span>
+                    <span>Excellent (10)</span>
+                  </div>
+                </v-card>
+              </v-col>
+
+              <!-- Collateral -->
+              <v-col cols="12" md="6">
+                <v-card variant="outlined" class="pa-4">
+                  <h5 class="text-subtitle-1 mb-2">
+                    <v-icon class="me-2" color="primary">mdi-home</v-icon>
+                    Collateral
+                  </h5>
+                  <p class="text-caption mb-3">Assets that secure the loan</p>
+                  <v-slider
+                    v-model="riskAssessment.collateral_score"
+                    :min="1"
+                    :max="10"
+                    :step="1"
+                    show-ticks="always"
+                    tick-size="4"
+                    thumb-label
+                    color="primary"
+                  />
+                  <div class="d-flex justify-space-between text-caption">
+                    <span>Poor (1)</span>
+                    <span>Excellent (10)</span>
+                  </div>
+                </v-card>
+              </v-col>
+
+              <!-- Capital -->
+              <v-col cols="12" md="6">
+                <v-card variant="outlined" class="pa-4">
+                  <h5 class="text-subtitle-1 mb-2">
+                    <v-icon class="me-2" color="primary">mdi-bank</v-icon>
+                    Capital
+                  </h5>
+                  <p class="text-caption mb-3">Financial resources and investment</p>
+                  <v-slider
+                    v-model="riskAssessment.capital_score"
+                    :min="1"
+                    :max="10"
+                    :step="1"
+                    show-ticks="always"
+                    tick-size="4"
+                    thumb-label
+                    color="primary"
+                  />
+                  <div class="d-flex justify-space-between text-caption">
+                    <span>Poor (1)</span>
+                    <span>Excellent (10)</span>
+                  </div>
+                </v-card>
+              </v-col>
+
+              <!-- Overall Risk Level -->
+              <v-col cols="12">
+                <v-card variant="outlined" class="pa-4">
+                  <h5 class="text-subtitle-1 mb-3">Overall Risk Level</h5>
+                  <v-select
+                    v-model="riskAssessment.overall_risk_level"
+                    :items="[
+                      { title: 'Low Risk', value: 'low' },
+                      { title: 'Medium Risk', value: 'medium' },
+                      { title: 'High Risk', value: 'high' },
+                    ]"
+                    variant="outlined"
+                    :color="getRiskColor(riskAssessment.overall_risk_level)"
+                  />
+                </v-card>
+              </v-col>
+
+              <!-- Notes -->
+              <v-col cols="12">
+                <v-textarea
+                  v-model="riskAssessment.notes"
+                  label="Assessment Notes"
+                  variant="outlined"
+                  rows="4"
+                  placeholder="Additional comments about the risk assessment..."
+                />
+              </v-col>
+
+              <!-- Assessment Summary -->
+              <v-col cols="12">
+                <v-card variant="tonal" :color="getRiskColor(calculatedRiskLevel)">
+                  <v-card-text>
+                    <h5 class="text-subtitle-1 mb-2">Assessment Summary</h5>
+                    <p><strong>Average Score:</strong> {{ averageScore.toFixed(1) }}/10</p>
+                    <p>
+                      <strong>Recommended Risk Level:</strong>
+                      {{ calculatedRiskLevel.toUpperCase() }}
+                    </p>
+                  </v-card-text>
+                </v-card>
+              </v-col>
+            </v-row>
+          </v-form>
+        </v-card-text>
+
+        <v-divider />
+
+        <v-card-actions>
+          <v-spacer />
+          <v-btn @click="showRiskAssessment = false">Cancel</v-btn>
+          <v-btn color="primary" @click="saveRiskAssessment"> Save Assessment </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -481,242 +650,342 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuth } from '@/utils/useAuth'
+import { ref, onMounted, computed } from "vue";
+import { useRouter } from "vue-router";
+import { useAuth } from "@/utils/useAuth";
+import { useLoanApplications, useLoanProducts, useRiskAssessment } from "@/utils/useSmartLoanApi";
+import { getCurrentUser } from "@/utils/useDirectus";
 
-const router = useRouter()
-const { logout } = useAuth()
+const router = useRouter();
+const { logout } = useAuth();
 
-const drawer = ref(true)
-const loading = ref(false)
-const showDetails = ref(false)
-const showConfirm = ref(false)
-const selectedApplication = ref(null)
-const confirmTitle = ref('')
-const confirmMessage = ref('')
-const confirmAction = ref('')
-const itemsPerPage = ref(10)
+const drawer = ref(true);
+const loading = ref(false);
+const showDetails = ref(false);
+const showConfirm = ref(false);
+const showRiskAssessment = ref(false);
+const selectedApplication = ref(null);
+const confirmTitle = ref("");
+const confirmMessage = ref("");
+const confirmAction = ref("");
+const itemsPerPage = ref(10);
+const currentUser = ref(null);
+
+// API composables
+const { getApplications, approveApplication, rejectApplication } = useLoanApplications();
+const { getProducts } = useLoanProducts();
+const { createRiskAssessment, getRiskAssessment } = useRiskAssessment();
 
 // Filters
 const filters = ref({
   status: null,
   loanProduct: null,
   amountFrom: null,
-  amountTo: null
-})
+  amountTo: null,
+});
 
-// Mock data
-const applications = ref([
-  {
-    id: 'APP-001',
-    clientName: 'Juan Dela Cruz',
-    loanProduct: 'Business Loan',
-    loanAmount: 100000,
-    termMonths: 24,
-    purpose: 'Business expansion',
-    status: 'pending',
-    applicationDate: '2024-01-15',
-    mobileNumber: '+63-912-345-6789',
-    civilStatus: 'Married',
-    address: '123 Main St, Quezon City',
-    businessName: 'Juan\'s Store',
-    businessType: 'Retail',
-    yearsInBusiness: 5,
-    monthlyIncome: 50000,
-    monthlyExpenses: 30000,
-    documents: [
-      { type: 'Valid ID', url: '#' },
-      { type: 'Business Permit', url: '#' },
-      { type: 'Photo', url: '#' }
-    ]
-  },
-  {
-    id: 'APP-002',
-    clientName: 'Maria Santos',
-    loanProduct: 'Personal Loan',
-    loanAmount: 50000,
-    termMonths: 12,
-    purpose: 'Medical expenses',
-    status: 'approved',
-    applicationDate: '2024-01-14',
-    mobileNumber: '+63-917-123-4567',
-    civilStatus: 'Single',
-    address: '456 Second Ave, Manila',
-    businessName: 'Maria\'s Catering',
-    businessType: 'Food Service',
-    yearsInBusiness: 3,
-    monthlyIncome: 35000,
-    monthlyExpenses: 20000,
-    documents: [
-      { type: 'Valid ID', url: '#' },
-      { type: 'Photo', url: '#' }
-    ]
-  },
-  {
-    id: 'APP-003',
-    clientName: 'Pedro Garcia',
-    loanProduct: 'Equipment Loan',
-    loanAmount: 200000,
-    termMonths: 36,
-    purpose: 'Equipment purchase',
-    status: 'under_review',
-    applicationDate: '2024-01-13',
-    mobileNumber: '+63-920-987-6543',
-    civilStatus: 'Married',
-    address: '789 Third St, Pasig',
-    businessName: 'Garcia Auto Repair',
-    businessType: 'Automotive',
-    yearsInBusiness: 8,
-    monthlyIncome: 80000,
-    monthlyExpenses: 45000,
-    documents: [
-      { type: 'Valid ID', url: '#' },
-      { type: 'Business Permit', url: '#' },
-      { type: 'Photo', url: '#' },
-      { type: 'Co-maker ID', url: '#' }
-    ]
-  }
-])
+// Applications data
+const applications = ref([]);
+const loanProductOptions = ref([]);
+
+// Risk assessment data
+const riskAssessment = ref({
+  capacity_score: 5,
+  character_score: 5,
+  collateral_score: 5,
+  capital_score: 5,
+  overall_risk_level: "medium",
+  notes: "",
+});
 
 const filteredApplications = computed(() => {
-  let filtered = applications.value
+  let filtered = applications.value;
 
   if (filters.value.status) {
-    filtered = filtered.filter(app => app.status === filters.value.status)
+    filtered = filtered.filter((app) => app.status === filters.value.status);
   }
 
   if (filters.value.loanProduct) {
-    filtered = filtered.filter(app => app.loanProduct === filters.value.loanProduct)
+    filtered = filtered.filter((app) => app.loanProduct === filters.value.loanProduct);
   }
 
   if (filters.value.amountFrom) {
-    filtered = filtered.filter(app => app.loanAmount >= filters.value.amountFrom)
+    filtered = filtered.filter((app) => app.loanAmount >= filters.value.amountFrom);
   }
 
   if (filters.value.amountTo) {
-    filtered = filtered.filter(app => app.loanAmount <= filters.value.amountTo)
+    filtered = filtered.filter((app) => app.loanAmount <= filters.value.amountTo);
   }
 
-  return filtered
-})
+  return filtered;
+});
 
 // Table configuration
 const headers = [
-  { title: 'Application ID', key: 'id', sortable: true },
-  { title: 'Client Name', key: 'clientName', sortable: true },
-  { title: 'Product', key: 'loanProduct', sortable: true },
-  { title: 'Amount', key: 'loanAmount', sortable: true },
-  { title: 'Status', key: 'status', sortable: true },
-  { title: 'Date', key: 'applicationDate', sortable: true },
-  { title: 'Actions', key: 'actions', sortable: false, width: '120px' }
-]
+  { title: "Application ID", key: "id", sortable: true },
+  { title: "Client Name", key: "clientName", sortable: true },
+  { title: "Product", key: "loanProduct", sortable: true },
+  { title: "Amount", key: "loanAmount", sortable: true },
+  { title: "Status", key: "status", sortable: true },
+  { title: "Date", key: "applicationDate", sortable: true },
+  { title: "Actions", key: "actions", sortable: false, width: "120px" },
+];
 
 const statusOptions = [
-  { title: 'Pending', value: 'pending' },
-  { title: 'Under Review', value: 'under_review' },
-  { title: 'Approved', value: 'approved' },
-  { title: 'Rejected', value: 'rejected' }
-]
+  { title: "Pending", value: "pending" },
+  { title: "Under Review", value: "under_review" },
+  { title: "Approved", value: "approved" },
+  { title: "Rejected", value: "rejected" },
+];
 
 const loanProductOptions = [
-  { title: 'Business Loan', value: 'Business Loan' },
-  { title: 'Personal Loan', value: 'Personal Loan' },
-  { title: 'Equipment Loan', value: 'Equipment Loan' },
-  { title: 'Emergency Loan', value: 'Emergency Loan' }
-]
+  { title: "Business Loan", value: "Business Loan" },
+  { title: "Personal Loan", value: "Personal Loan" },
+  { title: "Equipment Loan", value: "Equipment Loan" },
+  { title: "Emergency Loan", value: "Emergency Loan" },
+];
 
 // Methods
 const getStatusColor = (status: string) => {
   switch (status) {
-    case 'pending': return 'warning'
-    case 'approved': return 'success'
-    case 'rejected': return 'error'
-    case 'under_review': return 'info'
-    default: return 'primary'
+    case "pending":
+      return "warning";
+    case "approved":
+      return "success";
+    case "rejected":
+      return "error";
+    case "under_review":
+      return "info";
+    default:
+      return "primary";
   }
-}
+};
 
 const getNetIncomeClass = (application: any) => {
-  const netIncome = application.monthlyIncome - application.monthlyExpenses
-  if (netIncome > 10000) return 'text-success'
-  if (netIncome > 0) return 'text-warning'
-  return 'text-error'
-}
+  const netIncome = application.monthlyIncome - application.monthlyExpenses;
+  if (netIncome > 10000) return "text-success";
+  if (netIncome > 0) return "text-warning";
+  return "text-error";
+};
 
 const getDocumentIcon = (type: string) => {
   switch (type) {
-    case 'Valid ID': return 'mdi-card-account-details'
-    case 'Business Permit': return 'mdi-file-document'
-    case 'Photo': return 'mdi-camera'
-    case 'Co-maker ID': return 'mdi-account-supervisor'
-    default: return 'mdi-file-document'
+    case "Valid ID":
+      return "mdi-card-account-details";
+    case "Business Permit":
+      return "mdi-file-document";
+    case "Photo":
+      return "mdi-camera";
+    case "Co-maker ID":
+      return "mdi-account-supervisor";
+    default:
+      return "mdi-file-document";
   }
-}
+};
 
 const formatDate = (dateStr: string) => {
-  return new Date(dateStr).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  })
-}
+  return new Date(dateStr).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+};
 
 const viewApplication = (application: any) => {
-  selectedApplication.value = application
-  showDetails.value = true
-}
+  selectedApplication.value = application;
+  showDetails.value = true;
+};
 
 const approveApplication = (application: any) => {
-  selectedApplication.value = application
-  confirmTitle.value = 'Approve Application'
-  confirmMessage.value = `Are you sure you want to approve the loan application for ${application.clientName}?`
-  confirmAction.value = 'approve'
-  showConfirm.value = true
-}
+  selectedApplication.value = application;
+  confirmTitle.value = "Approve Application";
+  confirmMessage.value = `Are you sure you want to approve the loan application for ${application.clientName}?`;
+  confirmAction.value = "approve";
+  showConfirm.value = true;
+};
 
 const rejectApplication = (application: any) => {
-  selectedApplication.value = application
-  confirmTitle.value = 'Reject Application'
-  confirmMessage.value = `Are you sure you want to reject the loan application for ${application.clientName}?`
-  confirmAction.value = 'reject'
-  showConfirm.value = true
-}
+  selectedApplication.value = application;
+  confirmTitle.value = "Reject Application";
+  confirmMessage.value = `Are you sure you want to reject the loan application for ${application.clientName}?`;
+  confirmAction.value = "reject";
+  showConfirm.value = true;
+};
 
-const executeAction = () => {
-  if (selectedApplication.value) {
-    selectedApplication.value.status = confirmAction.value === 'approve' ? 'approved' : 'rejected'
-    // Here you would make API call to update status
+const executeAction = async () => {
+  try {
+    if (selectedApplication.value && currentUser.value) {
+      const remarks = `${confirmAction.value === "approve" ? "Approved" : "Rejected"} by ${currentUser.value.first_name} ${currentUser.value.last_name}`;
+
+      if (confirmAction.value === "approve") {
+        await approveApplication(selectedApplication.value.id, currentUser.value.id, remarks);
+      } else {
+        await rejectApplication(selectedApplication.value.id, currentUser.value.id, remarks);
+      }
+
+      // Refresh applications list
+      await loadApplications();
+
+      alert(
+        `Application ${confirmAction.value === "approve" ? "approved" : "rejected"} successfully!`,
+      );
+    }
+  } catch (error) {
+    console.error("Error updating application:", error);
+    alert("Error updating application. Please try again.");
   }
-  showConfirm.value = false
-  showDetails.value = false
-}
+
+  showConfirm.value = false;
+  showDetails.value = false;
+};
 
 const viewDocument = (doc: any) => {
   // Here you would open/download the document
-  console.log('View document:', doc)
-}
+  console.log("View document:", doc);
+};
+
+const averageScore = computed(() => {
+  const { capacity_score, character_score, collateral_score, capital_score } = riskAssessment.value;
+  return (capacity_score + character_score + collateral_score + capital_score) / 4;
+});
+
+const calculatedRiskLevel = computed(() => {
+  const avg = averageScore.value;
+  if (avg >= 8) return "low";
+  if (avg >= 5) return "medium";
+  return "high";
+});
+
+const getRiskColor = (level: string) => {
+  switch (level) {
+    case "low":
+      return "success";
+    case "medium":
+      return "warning";
+    case "high":
+      return "error";
+    default:
+      return "primary";
+  }
+};
+
+const openRiskAssessment = async (application: any) => {
+  selectedApplication.value = application;
+
+  // Reset risk assessment form
+  riskAssessment.value = {
+    capacity_score: 5,
+    character_score: 5,
+    collateral_score: 5,
+    capital_score: 5,
+    overall_risk_level: "medium",
+    notes: "",
+  };
+
+  // Try to load existing assessment
+  try {
+    const existingAssessment = await getRiskAssessment(application.id);
+    if (existingAssessment.length > 0) {
+      const assessment = existingAssessment[0];
+      riskAssessment.value = {
+        capacity_score: assessment.capacity_score,
+        character_score: assessment.character_score,
+        collateral_score: assessment.collateral_score,
+        capital_score: assessment.capital_score,
+        overall_risk_level: assessment.overall_risk_level,
+        notes: assessment.notes || "",
+      };
+    }
+  } catch (error) {
+    console.error("Error loading risk assessment:", error);
+  }
+
+  showRiskAssessment.value = true;
+};
+
+const saveRiskAssessment = async () => {
+  try {
+    if (!selectedApplication.value) return;
+
+    const assessmentData = {
+      loan_id: selectedApplication.value.id,
+      capacity_score: riskAssessment.value.capacity_score,
+      character_score: riskAssessment.value.character_score,
+      collateral_score: riskAssessment.value.collateral_score,
+      capital_score: riskAssessment.value.capital_score,
+      overall_risk_level: riskAssessment.value.overall_risk_level,
+      notes: riskAssessment.value.notes,
+    };
+
+    await createRiskAssessment(assessmentData);
+
+    alert("Risk assessment saved successfully!");
+    showRiskAssessment.value = false;
+  } catch (error) {
+    console.error("Error saving risk assessment:", error);
+    alert("Error saving risk assessment. Please try again.");
+  }
+};
 
 const filterApplications = () => {
   // Trigger reactivity for computed property
-}
+};
 
-const loadApplications = () => {
-  loading.value = true
-  // Simulate API call
-  setTimeout(() => {
-    loading.value = false
-  }, 1000)
-}
+const loadApplications = async () => {
+  loading.value = true;
+  try {
+    const [apps, products] = await Promise.all([getApplications(), getProducts()]);
+
+    // Transform applications data for table display
+    applications.value = apps.map((app) => ({
+      id: app.id,
+      clientName: `${app.client?.first_name || "Unknown"} ${app.client?.last_name || ""}`.trim(),
+      loanProduct: app.loan_product?.name || "Unknown",
+      loanAmount: app.principal_amount,
+      termMonths: app.term_months,
+      purpose: app.purpose,
+      status: app.status,
+      applicationDate: app.application_date,
+      mobileNumber: app.client?.mobile_number || "N/A",
+      civilStatus: app.client?.civil_status || "N/A",
+      address: app.client?.present_address || "N/A",
+      businessName: app.business_name || "N/A",
+      businessType: app.business_type || "N/A",
+      yearsInBusiness: app.years_in_business || 0,
+      monthlyIncome: app.monthly_income || 0,
+      monthlyExpenses: app.monthly_expenses || 0,
+      documents: [], // Documents would be handled separately
+    }));
+
+    // Transform products for filter options
+    loanProductOptions.value = products.map((product) => ({
+      title: product.name,
+      value: product.name,
+    }));
+  } catch (error) {
+    console.error("Error loading applications:", error);
+    alert("Error loading applications. Please try again.");
+  } finally {
+    loading.value = false;
+  }
+};
 
 const handleLogout = async () => {
-  await logout()
-  router.push('/')
-}
+  await logout();
+  router.push("/");
+};
 
-onMounted(() => {
-  loadApplications()
-})
+onMounted(async () => {
+  try {
+    // Get current user
+    currentUser.value = await getCurrentUser();
+
+    // Load applications
+    await loadApplications();
+  } catch (error) {
+    console.error("Error loading initial data:", error);
+  }
+});
 </script>
 
 <style scoped>
