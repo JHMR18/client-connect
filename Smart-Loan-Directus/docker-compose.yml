@@ -5,18 +5,15 @@ services:
     ports:
       - 8055:8055
     volumes:
+      - ./database:/directus/database
       - ./uploads:/directus/uploads
       - ./extensions:/directus/extensions
     environment:
       SECRET: "smartloan"
       ADMIN_EMAIL: "smartloan@gmail.com"
       ADMIN_PASSWORD: "smartloan"
-      DB_CLIENT: "pg"
-      DB_HOST: "postgres"
-      DB_PORT: "5432"
-      DB_DATABASE: "directus"
-      DB_USER: "directus"
-      DB_PASSWORD: "directuspass"
+      DB_CLIENT: "sqlite3"
+      DB_FILENAME: "/directus/database/data.db"
       WEBSOCKETS_ENABLED: "true"
       CORS_ENABLED: "true"
       CORS_ORIGIN: "http://localhost:3000"
@@ -24,18 +21,3 @@ services:
       CORS_METHODS: "GET, POST, PUT, DELETE, OPTIONS, PATCH"
       CORS_HEADERS: "Content-Type, Authorization, Access-Control-Allow-Origin"
       CORS_CREDENTIALS: "true"
-    depends_on:
-      - postgres
-
-  postgres:
-    container_name: postgres-smart-loan
-    image: postgres:15
-    environment:
-      POSTGRES_DB: directus
-      POSTGRES_USER: directus
-      POSTGRES_PASSWORD: directuspass
-    volumes:
-      - postgres_prod_data:/var/lib/postgresql/data
-
-volumes:
-  postgres_prod_data:
