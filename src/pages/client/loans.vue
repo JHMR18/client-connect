@@ -92,7 +92,7 @@
             </p>
           </div>
 
-          <v-btn color="primary" prepend-icon="mdi-refresh" @click="loadLoans" :loading="loading">
+          <v-btn color="red" prepend-icon="mdi-refresh" @click="loadLoans" :loading="loading">
             Refresh
           </v-btn>
         </div>
