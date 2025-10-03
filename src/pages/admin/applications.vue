@@ -1,665 +1,533 @@
 <template>
-  <v-app>
-    <v-navigation-drawer v-model="drawer" app permanent color="primary" theme="dark" width="280">
-      <div class="pa-4">
-        <div class="d-flex align-center mb-6">
-          <img src="/cct-logo.png" alt="Smart Loan" class="nav-logo me-3" />
-          <div>
-            <h3 class="text-h6 font-weight-bold">SMART LOAN</h3>
-            <p class="text-caption opacity-80 mb-0">Admin Portal</p>
-          </div>
+  <AdminLayout>
+    <v-container fluid class="pa-6">
+      <!-- Header -->
+      <div class="d-flex justify-space-between align-center mb-8">
+        <div>
+          <h1 class="text-h4 font-weight-bold mb-2">Loan Applications</h1>
+          <p class="text-subtitle-1 text-medium-emphasis">Review and manage loan applications</p>
         </div>
 
-        <v-divider class="mb-4" />
-
-        <v-list nav density="compact">
-          <v-list-item
-            prepend-icon="mdi-view-dashboard"
-            title="Dashboard"
-            value="dashboard"
-            :active="$route.path === '/admin/dashboard'"
-            @click="$router.push('/admin/dashboard')"
-          />
-
-          <v-list-group value="loans" :model-value="true">
-            <template #activator="{ props }">
-              <v-list-item
-                v-bind="props"
-                prepend-icon="mdi-file-document-multiple"
-                title="Loan Management"
-              />
-            </template>
-            <v-list-item
-              title="Applications"
-              prepend-icon="mdi-file-document-plus"
-              :active="$route.path === '/admin/applications'"
-              @click="$router.push('/admin/applications')"
-            />
-            <v-list-item
-              title="Active Loans"
-              prepend-icon="mdi-file-document-check"
-              :active="$route.path === '/admin/loans'"
-              @click="$router.push('/admin/loans')"
-            />
-            <v-list-item
-              title="Risk Assessment"
-              prepend-icon="mdi-scale-balance"
-              :active="$route.path === '/admin/risk-assessment'"
-              @click="$router.push('/admin/risk-assessment')"
-            />
-          </v-list-group>
-
-          <v-list-item
-            prepend-icon="mdi-account-group"
-            title="Clients"
-            value="clients"
-            :active="$route.path === '/admin/clients'"
-            @click="$router.push('/admin/clients')"
-          />
-
-          <v-list-item
-            prepend-icon="mdi-credit-card"
-            title="Payments"
-            value="payments"
-            :active="$route.path === '/admin/payments'"
-            @click="$router.push('/admin/payments')"
-          />
-
-          <v-list-group value="products">
-            <template #activator="{ props }">
-              <v-list-item
-                v-bind="props"
-                prepend-icon="mdi-package-variant"
-                title="Loan Products"
-              />
-            </template>
-            <v-list-item
-              title="Manage Products"
-              prepend-icon="mdi-cog"
-              :active="$route.path === '/admin/loan-products'"
-              @click="$router.push('/admin/loan-products')"
-            />
-          </v-list-group>
-
-          <v-list-group value="reports">
-            <template #activator="{ props }">
-              <v-list-item v-bind="props" prepend-icon="mdi-chart-box" title="Reports" />
-            </template>
-            <v-list-item
-              title="Financial Reports"
-              prepend-icon="mdi-chart-line"
-              :active="$route.path === '/admin/financial-reports'"
-              @click="$router.push('/admin/financial-reports')"
-            />
-            <v-list-item
-              title="Audit Logs"
-              prepend-icon="mdi-history"
-              :active="$route.path === '/admin/audit-logs'"
-              @click="$router.push('/admin/audit-logs')"
-            />
-          </v-list-group>
-        </v-list>
+        <v-btn
+          color="primary"
+          prepend-icon="mdi-refresh"
+          @click="loadApplications"
+          :loading="loading"
+        >
+          Refresh
+        </v-btn>
       </div>
 
-      <template #append>
-        <div class="pa-4">
-          <v-divider class="mb-4" />
-          <v-btn color="error" variant="text" prepend-icon="mdi-logout" block @click="handleLogout">
-            Logout
-          </v-btn>
-        </div>
-      </template>
-    </v-navigation-drawer>
-
-    <v-app-bar app color="white" elevation="2" height="70">
-      <template #prepend>
-        <v-app-bar-nav-icon @click="drawer = !drawer" class="hidden-lg-and-up" />
-      </template>
-
-      <v-spacer />
-
-      <div class="d-flex align-center">
-        <v-chip color="primary" variant="flat" class="me-4">
-          <v-icon start>mdi-shield-account</v-icon>
-          Admin Portal
-        </v-chip>
-        <v-avatar color="primary" size="40">
-          <v-icon>mdi-account-supervisor</v-icon>
-        </v-avatar>
-      </div>
-    </v-app-bar>
-
-    <v-main>
-      <v-container fluid class="pa-6">
-        <!-- Header -->
-        <div class="d-flex justify-space-between align-center mb-8">
-          <div>
-            <h1 class="text-h4 font-weight-bold mb-2">Loan Applications</h1>
-            <p class="text-subtitle-1 text-medium-emphasis">Review and manage loan applications</p>
-          </div>
-
-          <v-btn
-            color="primary"
-            prepend-icon="mdi-refresh"
-            @click="loadApplications"
-            :loading="loading"
-          >
-            Refresh
-          </v-btn>
-        </div>
-
-        <!-- Filters -->
-        <v-card class="mb-6">
-          <v-card-text>
-            <v-row>
-              <v-col cols="12" md="3">
-                <v-select
-                  v-model="filters.status"
-                  :items="statusOptions"
-                  label="Status"
-                  variant="outlined"
-                  clearable
-                  @update:model-value="filterApplications"
-                />
-              </v-col>
-              <v-col cols="12" md="3">
-                <v-select
-                  v-model="filters.loanProduct"
-                  :items="loanProductOptions"
-                  label="Loan Product"
-                  variant="outlined"
-                  clearable
-                  @update:model-value="filterApplications"
-                />
-              </v-col>
-              <v-col cols="12" md="3">
-                <v-text-field
-                  v-model="filters.amountFrom"
-                  label="Amount From (₱)"
-                  type="number"
-                  variant="outlined"
-                  @update:model-value="filterApplications"
-                />
-              </v-col>
-              <v-col cols="12" md="3">
-                <v-text-field
-                  v-model="filters.amountTo"
-                  label="Amount To (₱)"
-                  type="number"
-                  variant="outlined"
-                  @update:model-value="filterApplications"
-                />
-              </v-col>
-            </v-row>
-          </v-card-text>
-        </v-card>
-
-        <!-- Applications Table -->
-        <v-card>
-          <v-data-table
-            v-model:items-per-page="itemsPerPage"
-            :headers="headers"
-            :items="filteredApplications"
-            :loading="loading"
-            item-value="id"
-            class="application-table"
-          >
-            <!-- Status chip -->
-            <template #item.status="{ item }">
-              <v-chip :color="getStatusColor(item.status)" size="small" variant="flat">
-                {{ item.status }}
-              </v-chip>
-            </template>
-
-            <!-- Amount formatting -->
-            <template #item.loanAmount="{ item }">
-              ₱{{ item.loanAmount.toLocaleString() }}
-            </template>
-
-            <!-- Date formatting -->
-            <template #item.applicationDate="{ item }">
-              {{ formatDate(item.applicationDate) }}
-            </template>
-
-            <!-- Actions -->
-            <template #item.actions="{ item }">
-              <div class="d-flex gap-2">
-                <v-btn color="primary" size="small" variant="tonal" @click="viewApplication(item)">
-                  <v-icon>mdi-eye</v-icon>
-                </v-btn>
-                <v-btn
-                  v-if="item.status === 'pending'"
-                  color="info"
-                  size="small"
-                  variant="tonal"
-                  @click="openRiskAssessment(item)"
-                >
-                  <v-icon>mdi-scale-balance</v-icon>
-                </v-btn>
-                <v-btn
-                  v-if="item.status === 'pending'"
-                  color="success"
-                  size="small"
-                  variant="tonal"
-                  @click="approveApplication(item)"
-                >
-                  <v-icon>mdi-check</v-icon>
-                </v-btn>
-                <v-btn
-                  v-if="item.status === 'pending'"
-                  color="error"
-                  size="small"
-                  variant="tonal"
-                  @click="rejectApplication(item)"
-                >
-                  <v-icon>mdi-close</v-icon>
-                </v-btn>
-              </div>
-            </template>
-
-            <!-- No data -->
-            <template #no-data>
-              <div class="text-center pa-8">
-                <v-icon size="64" class="text-disabled mb-4">mdi-file-document-outline</v-icon>
-                <p class="text-h6 text-disabled">No applications found</p>
-              </div>
-            </template>
-          </v-data-table>
-        </v-card>
-      </v-container>
-    </v-main>
-
-    <!-- Application Details Dialog -->
-    <v-dialog v-model="showDetails" max-width="1200" scrollable>
-      <v-card v-if="selectedApplication">
-        <v-card-title class="d-flex justify-space-between align-center">
-          <div>
-            <h3>Application Details</h3>
-            <p class="text-subtitle-2 text-medium-emphasis mb-0">
-              ID: {{ selectedApplication.id }}
-            </p>
-          </div>
-          <v-chip :color="getStatusColor(selectedApplication.status)" variant="flat">
-            {{ selectedApplication.status }}
-          </v-chip>
-        </v-card-title>
-
-        <v-divider />
-
-        <v-card-text style="max-height: 600px">
+      <!-- Filters -->
+      <v-card class="mb-6">
+        <v-card-text>
           <v-row>
-            <!-- Personal Information -->
-            <v-col cols="12" lg="6">
-              <v-card variant="outlined">
-                <v-card-title class="text-h6">Personal Information</v-card-title>
-                <v-card-text>
-                  <div class="info-grid">
-                    <div class="info-item">
-                      <span class="label">Name:</span>
-                      <span class="value">{{ selectedApplication.clientName }}</span>
-                    </div>
-                    <div class="info-item">
-                      <span class="label">Mobile:</span>
-                      <span class="value">{{ selectedApplication.mobileNumber }}</span>
-                    </div>
-                    <div class="info-item">
-                      <span class="label">Civil Status:</span>
-                      <span class="value">{{ selectedApplication.civilStatus }}</span>
-                    </div>
-                    <div class="info-item">
-                      <span class="label">Address:</span>
-                      <span class="value">{{ selectedApplication.address }}</span>
-                    </div>
-                  </div>
-                </v-card-text>
-              </v-card>
+            <v-col cols="12" md="3">
+              <v-select
+                v-model="filters.status"
+                :items="statusOptions"
+                label="Status"
+                variant="outlined"
+                clearable
+                @update:model-value="filterApplications"
+              />
             </v-col>
-
-            <!-- Loan Information -->
-            <v-col cols="12" lg="6">
-              <v-card variant="outlined">
-                <v-card-title class="text-h6">Loan Information</v-card-title>
-                <v-card-text>
-                  <div class="info-grid">
-                    <div class="info-item">
-                      <span class="label">Product:</span>
-                      <span class="value">{{ selectedApplication.loanProduct }}</span>
-                    </div>
-                    <div class="info-item">
-                      <span class="label">Amount:</span>
-                      <span class="value"
-                        >₱{{ selectedApplication.loanAmount.toLocaleString() }}</span
-                      >
-                    </div>
-                    <div class="info-item">
-                      <span class="label">Term:</span>
-                      <span class="value">{{ selectedApplication.termMonths }} months</span>
-                    </div>
-                    <div class="info-item">
-                      <span class="label">Purpose:</span>
-                      <span class="value">{{ selectedApplication.purpose }}</span>
-                    </div>
-                  </div>
-                </v-card-text>
-              </v-card>
+            <v-col cols="12" md="3">
+              <v-select
+                v-model="filters.loanProduct"
+                :items="loanProductOptions"
+                label="Loan Product"
+                variant="outlined"
+                clearable
+                @update:model-value="filterApplications"
+              />
             </v-col>
-
-            <!-- Financial Information -->
-            <v-col cols="12" lg="6">
-              <v-card variant="outlined">
-                <v-card-title class="text-h6">Financial Information</v-card-title>
-                <v-card-text>
-                  <div class="info-grid">
-                    <div class="info-item">
-                      <span class="label">Monthly Income:</span>
-                      <span class="value"
-                        >₱{{ selectedApplication.monthlyIncome.toLocaleString() }}</span
-                      >
-                    </div>
-                    <div class="info-item">
-                      <span class="label">Monthly Expenses:</span>
-                      <span class="value"
-                        >₱{{ selectedApplication.monthlyExpenses.toLocaleString() }}</span
-                      >
-                    </div>
-                    <div class="info-item">
-                      <span class="label">Net Income:</span>
-                      <span class="value" :class="getNetIncomeClass(selectedApplication)">
-                        ₱{{
-                          (
-                            selectedApplication.monthlyIncome - selectedApplication.monthlyExpenses
-                          ).toLocaleString()
-                        }}
-                      </span>
-                    </div>
-                  </div>
-                </v-card-text>
-              </v-card>
+            <v-col cols="12" md="3">
+              <v-text-field
+                v-model="filters.amountFrom"
+                label="Amount From (₱)"
+                type="number"
+                variant="outlined"
+                @update:model-value="filterApplications"
+              />
             </v-col>
-
-            <!-- Business Information -->
-            <v-col cols="12" lg="6">
-              <v-card variant="outlined">
-                <v-card-title class="text-h6">Business Information</v-card-title>
-                <v-card-text>
-                  <div class="info-grid">
-                    <div class="info-item">
-                      <span class="label">Business Name:</span>
-                      <span class="value">{{ selectedApplication.businessName }}</span>
-                    </div>
-                    <div class="info-item">
-                      <span class="label">Business Type:</span>
-                      <span class="value">{{ selectedApplication.businessType }}</span>
-                    </div>
-                    <div class="info-item">
-                      <span class="label">Years in Business:</span>
-                      <span class="value">{{ selectedApplication.yearsInBusiness }} years</span>
-                    </div>
-                  </div>
-                </v-card-text>
-              </v-card>
-            </v-col>
-
-            <!-- Documents -->
-            <v-col cols="12">
-              <v-card variant="outlined">
-                <v-card-title class="text-h6">Submitted Documents</v-card-title>
-                <v-card-text>
-                  <v-row>
-                    <v-col
-                      cols="6"
-                      md="3"
-                      v-for="doc in selectedApplication.documents"
-                      :key="doc.type"
-                    >
-                      <v-card class="document-card" variant="tonal" color="primary">
-                        <v-card-text class="text-center">
-                          <v-icon size="32" class="mb-2">{{ getDocumentIcon(doc.type) }}</v-icon>
-                          <p class="text-caption">{{ doc.type }}</p>
-                          <v-btn size="small" variant="outlined" @click="viewDocument(doc)">
-                            View
-                          </v-btn>
-                        </v-card-text>
-                      </v-card>
-                    </v-col>
-                  </v-row>
-                </v-card-text>
-              </v-card>
+            <v-col cols="12" md="3">
+              <v-text-field
+                v-model="filters.amountTo"
+                label="Amount To (₱)"
+                type="number"
+                variant="outlined"
+                @update:model-value="filterApplications"
+              />
             </v-col>
           </v-row>
         </v-card-text>
-
-        <v-divider />
-
-        <v-card-actions>
-          <v-spacer />
-          <v-btn
-            v-if="selectedApplication.status === 'pending'"
-            color="error"
-            variant="outlined"
-            @click="rejectApplication(selectedApplication)"
-          >
-            Reject
-          </v-btn>
-          <v-btn
-            v-if="selectedApplication.status === 'pending'"
-            color="success"
-            @click="approveApplication(selectedApplication)"
-          >
-            Approve
-          </v-btn>
-          <v-btn @click="showDetails = false">Close</v-btn>
-        </v-card-actions>
       </v-card>
-    </v-dialog>
 
-    <!-- Confirm Dialog -->
-    <v-dialog v-model="showConfirm" max-width="400">
+      <!-- Applications Table -->
       <v-card>
-        <v-card-title>{{ confirmTitle }}</v-card-title>
-        <v-card-text>{{ confirmMessage }}</v-card-text>
-        <v-card-actions>
-          <v-spacer />
-          <v-btn @click="showConfirm = false">Cancel</v-btn>
-          <v-btn :color="confirmAction === 'approve' ? 'success' : 'error'" @click="executeAction">
-            {{ confirmAction === "approve" ? "Approve" : "Reject" }}
-          </v-btn>
-        </v-card-actions>
+        <v-data-table
+          v-model:items-per-page="itemsPerPage"
+          :headers="headers"
+          :items="filteredApplications"
+          :loading="loading"
+          item-value="id"
+          class="application-table"
+        >
+          <!-- Status chip -->
+          <template #item.status="{ item }">
+            <v-chip :color="getStatusColor(item.status)" size="small" variant="flat">
+              {{ item.status }}
+            </v-chip>
+          </template>
+
+          <!-- Amount formatting -->
+          <template #item.loanAmount="{ item }"> ₱{{ item.loanAmount.toLocaleString() }} </template>
+
+          <!-- Date formatting -->
+          <template #item.applicationDate="{ item }">
+            {{ formatDate(item.applicationDate) }}
+          </template>
+
+          <!-- Actions -->
+          <template #item.actions="{ item }">
+            <div class="d-flex gap-2">
+              <v-btn color="primary" size="small" variant="tonal" @click="viewApplication(item)">
+                <v-icon>mdi-eye</v-icon>
+              </v-btn>
+              <v-btn
+                v-if="item.status === 'pending'"
+                color="info"
+                size="small"
+                variant="tonal"
+                @click="openRiskAssessment(item)"
+              >
+                <v-icon>mdi-scale-balance</v-icon>
+              </v-btn>
+              <v-btn
+                v-if="item.status === 'pending'"
+                color="success"
+                size="small"
+                variant="tonal"
+                @click="approveApplication(item)"
+              >
+                <v-icon>mdi-check</v-icon>
+              </v-btn>
+              <v-btn
+                v-if="item.status === 'pending'"
+                color="error"
+                size="small"
+                variant="tonal"
+                @click="rejectApplication(item)"
+              >
+                <v-icon>mdi-close</v-icon>
+              </v-btn>
+            </div>
+          </template>
+
+          <!-- No data -->
+          <template #no-data>
+            <div class="text-center pa-8">
+              <v-icon size="64" class="text-disabled mb-4">mdi-file-document-outline</v-icon>
+              <p class="text-h6 text-disabled">No applications found</p>
+            </div>
+          </template>
+        </v-data-table>
       </v-card>
-    </v-dialog>
 
-    <!-- Risk Assessment Dialog -->
-    <v-dialog v-model="showRiskAssessment" max-width="800" scrollable>
-      <v-card v-if="selectedApplication">
-        <v-card-title class="d-flex justify-space-between align-center">
-          <div>
-            <h3>Risk Assessment</h3>
-            <p class="text-subtitle-2 text-medium-emphasis mb-0">
-              {{ selectedApplication.clientName }} - {{ selectedApplication.loanProduct }}
-            </p>
-          </div>
-        </v-card-title>
+      <!-- Application Details Dialog -->
+      <v-dialog v-model="showDetails" max-width="1200" scrollable>
+        <v-card v-if="selectedApplication">
+          <v-card-title class="d-flex justify-space-between align-center">
+            <div>
+              <h3>Application Details</h3>
+              <p class="text-subtitle-2 text-medium-emphasis mb-0">
+                ID: {{ selectedApplication.id }}
+              </p>
+            </div>
+            <v-chip :color="getStatusColor(selectedApplication.status)" variant="flat">
+              {{ selectedApplication.status }}
+            </v-chip>
+          </v-card-title>
 
-        <v-divider />
+          <v-divider />
 
-        <v-card-text style="max-height: 500px">
-          <v-form ref="riskForm">
+          <v-card-text style="max-height: 600px">
             <v-row>
-              <v-col cols="12">
-                <h4 class="text-h6 mb-4">4Cs Assessment</h4>
-                <p class="text-body-2 text-medium-emphasis mb-4">
-                  Rate each factor from 1 (Poor) to 10 (Excellent)
-                </p>
-              </v-col>
-
-              <!-- Capacity -->
-              <v-col cols="12" md="6">
-                <v-card variant="outlined" class="pa-4">
-                  <h5 class="text-subtitle-1 mb-2">
-                    <v-icon class="me-2" color="primary">mdi-cash-multiple</v-icon>
-                    Capacity
-                  </h5>
-                  <p class="text-caption mb-3">Ability to repay the loan</p>
-                  <v-slider
-                    v-model="riskAssessment.capacity_score"
-                    :min="1"
-                    :max="10"
-                    :step="1"
-                    show-ticks="always"
-                    tick-size="4"
-                    thumb-label
-                    color="primary"
-                  />
-                  <div class="d-flex justify-space-between text-caption">
-                    <span>Poor (1)</span>
-                    <span>Excellent (10)</span>
-                  </div>
-                </v-card>
-              </v-col>
-
-              <!-- Character -->
-              <v-col cols="12" md="6">
-                <v-card variant="outlined" class="pa-4">
-                  <h5 class="text-subtitle-1 mb-2">
-                    <v-icon class="me-2" color="primary">mdi-account-heart</v-icon>
-                    Character
-                  </h5>
-                  <p class="text-caption mb-3">Credit history and willingness to pay</p>
-                  <v-slider
-                    v-model="riskAssessment.character_score"
-                    :min="1"
-                    :max="10"
-                    :step="1"
-                    show-ticks="always"
-                    tick-size="4"
-                    thumb-label
-                    color="primary"
-                  />
-                  <div class="d-flex justify-space-between text-caption">
-                    <span>Poor (1)</span>
-                    <span>Excellent (10)</span>
-                  </div>
-                </v-card>
-              </v-col>
-
-              <!-- Collateral -->
-              <v-col cols="12" md="6">
-                <v-card variant="outlined" class="pa-4">
-                  <h5 class="text-subtitle-1 mb-2">
-                    <v-icon class="me-2" color="primary">mdi-home</v-icon>
-                    Collateral
-                  </h5>
-                  <p class="text-caption mb-3">Assets that secure the loan</p>
-                  <v-slider
-                    v-model="riskAssessment.collateral_score"
-                    :min="1"
-                    :max="10"
-                    :step="1"
-                    show-ticks="always"
-                    tick-size="4"
-                    thumb-label
-                    color="primary"
-                  />
-                  <div class="d-flex justify-space-between text-caption">
-                    <span>Poor (1)</span>
-                    <span>Excellent (10)</span>
-                  </div>
-                </v-card>
-              </v-col>
-
-              <!-- Capital -->
-              <v-col cols="12" md="6">
-                <v-card variant="outlined" class="pa-4">
-                  <h5 class="text-subtitle-1 mb-2">
-                    <v-icon class="me-2" color="primary">mdi-bank</v-icon>
-                    Capital
-                  </h5>
-                  <p class="text-caption mb-3">Financial resources and investment</p>
-                  <v-slider
-                    v-model="riskAssessment.capital_score"
-                    :min="1"
-                    :max="10"
-                    :step="1"
-                    show-ticks="always"
-                    tick-size="4"
-                    thumb-label
-                    color="primary"
-                  />
-                  <div class="d-flex justify-space-between text-caption">
-                    <span>Poor (1)</span>
-                    <span>Excellent (10)</span>
-                  </div>
-                </v-card>
-              </v-col>
-
-              <!-- Overall Risk Level -->
-              <v-col cols="12">
-                <v-card variant="outlined" class="pa-4">
-                  <h5 class="text-subtitle-1 mb-3">Overall Risk Level</h5>
-                  <v-select
-                    v-model="riskAssessment.overall_risk_level"
-                    :items="[
-                      { title: 'Low Risk', value: 'low' },
-                      { title: 'Medium Risk', value: 'medium' },
-                      { title: 'High Risk', value: 'high' },
-                    ]"
-                    variant="outlined"
-                    :color="getRiskColor(riskAssessment.overall_risk_level)"
-                  />
-                </v-card>
-              </v-col>
-
-              <!-- Notes -->
-              <v-col cols="12">
-                <v-textarea
-                  v-model="riskAssessment.notes"
-                  label="Assessment Notes"
-                  variant="outlined"
-                  rows="4"
-                  placeholder="Additional comments about the risk assessment..."
-                />
-              </v-col>
-
-              <!-- Assessment Summary -->
-              <v-col cols="12">
-                <v-card variant="tonal" :color="getRiskColor(calculatedRiskLevel)">
+              <!-- Personal Information -->
+              <v-col cols="12" lg="6">
+                <v-card variant="outlined">
+                  <v-card-title class="text-h6">Personal Information</v-card-title>
                   <v-card-text>
-                    <h5 class="text-subtitle-1 mb-2">Assessment Summary</h5>
-                    <p><strong>Average Score:</strong> {{ averageScore.toFixed(1) }}/10</p>
-                    <p>
-                      <strong>Recommended Risk Level:</strong>
-                      {{ calculatedRiskLevel.toUpperCase() }}
-                    </p>
+                    <div class="info-grid">
+                      <div class="info-item">
+                        <span class="label">Name:</span>
+                        <span class="value">{{ selectedApplication.clientName }}</span>
+                      </div>
+                      <div class="info-item">
+                        <span class="label">Mobile:</span>
+                        <span class="value">{{ selectedApplication.mobileNumber }}</span>
+                      </div>
+                      <div class="info-item">
+                        <span class="label">Civil Status:</span>
+                        <span class="value">{{ selectedApplication.civilStatus }}</span>
+                      </div>
+                      <div class="info-item">
+                        <span class="label">Address:</span>
+                        <span class="value">{{ selectedApplication.address }}</span>
+                      </div>
+                    </div>
+                  </v-card-text>
+                </v-card>
+              </v-col>
+
+              <!-- Loan Information -->
+              <v-col cols="12" lg="6">
+                <v-card variant="outlined">
+                  <v-card-title class="text-h6">Loan Information</v-card-title>
+                  <v-card-text>
+                    <div class="info-grid">
+                      <div class="info-item">
+                        <span class="label">Product:</span>
+                        <span class="value">{{ selectedApplication.loanProduct }}</span>
+                      </div>
+                      <div class="info-item">
+                        <span class="label">Amount:</span>
+                        <span class="value"
+                          >₱{{ selectedApplication.loanAmount.toLocaleString() }}</span
+                        >
+                      </div>
+                      <div class="info-item">
+                        <span class="label">Term:</span>
+                        <span class="value">{{ selectedApplication.termMonths }} months</span>
+                      </div>
+                      <div class="info-item">
+                        <span class="label">Purpose:</span>
+                        <span class="value">{{ selectedApplication.purpose }}</span>
+                      </div>
+                    </div>
+                  </v-card-text>
+                </v-card>
+              </v-col>
+
+              <!-- Financial Information -->
+              <v-col cols="12" lg="6">
+                <v-card variant="outlined">
+                  <v-card-title class="text-h6">Financial Information</v-card-title>
+                  <v-card-text>
+                    <div class="info-grid">
+                      <div class="info-item">
+                        <span class="label">Monthly Income:</span>
+                        <span class="value"
+                          >₱{{ selectedApplication.monthlyIncome.toLocaleString() }}</span
+                        >
+                      </div>
+                      <div class="info-item">
+                        <span class="label">Monthly Expenses:</span>
+                        <span class="value"
+                          >₱{{ selectedApplication.monthlyExpenses.toLocaleString() }}</span
+                        >
+                      </div>
+                      <div class="info-item">
+                        <span class="label">Net Income:</span>
+                        <span class="value" :class="getNetIncomeClass(selectedApplication)">
+                          ₱{{
+                            (
+                              selectedApplication.monthlyIncome -
+                              selectedApplication.monthlyExpenses
+                            ).toLocaleString()
+                          }}
+                        </span>
+                      </div>
+                    </div>
+                  </v-card-text>
+                </v-card>
+              </v-col>
+
+              <!-- Business Information -->
+              <v-col cols="12" lg="6">
+                <v-card variant="outlined">
+                  <v-card-title class="text-h6">Business Information</v-card-title>
+                  <v-card-text>
+                    <div class="info-grid">
+                      <div class="info-item">
+                        <span class="label">Business Name:</span>
+                        <span class="value">{{ selectedApplication.businessName }}</span>
+                      </div>
+                      <div class="info-item">
+                        <span class="label">Business Type:</span>
+                        <span class="value">{{ selectedApplication.businessType }}</span>
+                      </div>
+                      <div class="info-item">
+                        <span class="label">Years in Business:</span>
+                        <span class="value">{{ selectedApplication.yearsInBusiness }} years</span>
+                      </div>
+                    </div>
+                  </v-card-text>
+                </v-card>
+              </v-col>
+
+              <!-- Documents -->
+              <v-col cols="12">
+                <v-card variant="outlined">
+                  <v-card-title class="text-h6">Submitted Documents</v-card-title>
+                  <v-card-text>
+                    <v-row>
+                      <v-col
+                        cols="6"
+                        md="3"
+                        v-for="doc in selectedApplication.documents"
+                        :key="doc.type"
+                      >
+                        <v-card class="document-card" variant="tonal" color="primary">
+                          <v-card-text class="text-center">
+                            <v-icon size="32" class="mb-2">{{ getDocumentIcon(doc.type) }}</v-icon>
+                            <p class="text-caption">{{ doc.type }}</p>
+                            <v-btn size="small" variant="outlined" @click="viewDocument(doc)">
+                              View
+                            </v-btn>
+                          </v-card-text>
+                        </v-card>
+                      </v-col>
+                    </v-row>
                   </v-card-text>
                 </v-card>
               </v-col>
             </v-row>
-          </v-form>
-        </v-card-text>
+          </v-card-text>
 
-        <v-divider />
+          <v-divider />
 
-        <v-card-actions>
-          <v-spacer />
-          <v-btn @click="showRiskAssessment = false">Cancel</v-btn>
-          <v-btn color="primary" @click="saveRiskAssessment"> Save Assessment </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
-  </v-app>
+          <v-card-actions>
+            <v-spacer />
+            <v-btn
+              v-if="selectedApplication.status === 'pending'"
+              color="error"
+              variant="outlined"
+              @click="rejectApplication(selectedApplication)"
+            >
+              Reject
+            </v-btn>
+            <v-btn
+              v-if="selectedApplication.status === 'pending'"
+              color="success"
+              @click="approveApplication(selectedApplication)"
+            >
+              Approve
+            </v-btn>
+            <v-btn @click="showDetails = false">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+      <!-- Confirm Dialog -->
+      <v-dialog v-model="showConfirm" max-width="400">
+        <v-card>
+          <v-card-title>{{ confirmTitle }}</v-card-title>
+          <v-card-text>{{ confirmMessage }}</v-card-text>
+          <v-card-actions>
+            <v-spacer />
+            <v-btn @click="showConfirm = false">Cancel</v-btn>
+            <v-btn
+              :color="confirmAction === 'approve' ? 'success' : 'error'"
+              @click="executeAction"
+            >
+              {{ confirmAction === "approve" ? "Approve" : "Reject" }}
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+      <!-- Risk Assessment Dialog -->
+      <v-dialog v-model="showRiskAssessment" max-width="800" scrollable>
+        <v-card v-if="selectedApplication">
+          <v-card-title class="d-flex justify-space-between align-center">
+            <div>
+              <h3>Risk Assessment</h3>
+              <p class="text-subtitle-2 text-medium-emphasis mb-0">
+                {{ selectedApplication.clientName }} - {{ selectedApplication.loanProduct }}
+              </p>
+            </div>
+          </v-card-title>
+
+          <v-divider />
+
+          <v-card-text style="max-height: 500px">
+            <v-form ref="riskForm">
+              <v-row>
+                <v-col cols="12">
+                  <h4 class="text-h6 mb-4">4Cs Assessment</h4>
+                  <p class="text-body-2 text-medium-emphasis mb-4">
+                    Rate each factor from 1 (Poor) to 10 (Excellent)
+                  </p>
+                </v-col>
+
+                <!-- Capacity -->
+                <v-col cols="12" md="6">
+                  <v-card variant="outlined" class="pa-4">
+                    <h5 class="text-subtitle-1 mb-2">
+                      <v-icon class="me-2" color="primary">mdi-cash-multiple</v-icon>
+                      Capacity
+                    </h5>
+                    <p class="text-caption mb-3">Ability to repay the loan</p>
+                    <v-slider
+                      v-model="riskAssessment.capacity_score"
+                      :min="1"
+                      :max="10"
+                      :step="1"
+                      show-ticks="always"
+                      tick-size="4"
+                      thumb-label
+                      color="primary"
+                    />
+                    <div class="d-flex justify-space-between text-caption">
+                      <span>Poor (1)</span>
+                      <span>Excellent (10)</span>
+                    </div>
+                  </v-card>
+                </v-col>
+
+                <!-- Character -->
+                <v-col cols="12" md="6">
+                  <v-card variant="outlined" class="pa-4">
+                    <h5 class="text-subtitle-1 mb-2">
+                      <v-icon class="me-2" color="primary">mdi-account-heart</v-icon>
+                      Character
+                    </h5>
+                    <p class="text-caption mb-3">Credit history and willingness to pay</p>
+                    <v-slider
+                      v-model="riskAssessment.character_score"
+                      :min="1"
+                      :max="10"
+                      :step="1"
+                      show-ticks="always"
+                      tick-size="4"
+                      thumb-label
+                      color="primary"
+                    />
+                    <div class="d-flex justify-space-between text-caption">
+                      <span>Poor (1)</span>
+                      <span>Excellent (10)</span>
+                    </div>
+                  </v-card>
+                </v-col>
+
+                <!-- Collateral -->
+                <v-col cols="12" md="6">
+                  <v-card variant="outlined" class="pa-4">
+                    <h5 class="text-subtitle-1 mb-2">
+                      <v-icon class="me-2" color="primary">mdi-home</v-icon>
+                      Collateral
+                    </h5>
+                    <p class="text-caption mb-3">Assets that secure the loan</p>
+                    <v-slider
+                      v-model="riskAssessment.collateral_score"
+                      :min="1"
+                      :max="10"
+                      :step="1"
+                      show-ticks="always"
+                      tick-size="4"
+                      thumb-label
+                      color="primary"
+                    />
+                    <div class="d-flex justify-space-between text-caption">
+                      <span>Poor (1)</span>
+                      <span>Excellent (10)</span>
+                    </div>
+                  </v-card>
+                </v-col>
+
+                <!-- Capital -->
+                <v-col cols="12" md="6">
+                  <v-card variant="outlined" class="pa-4">
+                    <h5 class="text-subtitle-1 mb-2">
+                      <v-icon class="me-2" color="primary">mdi-bank</v-icon>
+                      Capital
+                    </h5>
+                    <p class="text-caption mb-3">Financial resources and investment</p>
+                    <v-slider
+                      v-model="riskAssessment.capital_score"
+                      :min="1"
+                      :max="10"
+                      :step="1"
+                      show-ticks="always"
+                      tick-size="4"
+                      thumb-label
+                      color="primary"
+                    />
+                    <div class="d-flex justify-space-between text-caption">
+                      <span>Poor (1)</span>
+                      <span>Excellent (10)</span>
+                    </div>
+                  </v-card>
+                </v-col>
+
+                <!-- Overall Risk Level -->
+                <v-col cols="12">
+                  <v-card variant="outlined" class="pa-4">
+                    <h5 class="text-subtitle-1 mb-3">Overall Risk Level</h5>
+                    <v-select
+                      v-model="riskAssessment.overall_risk_level"
+                      :items="[
+                        { title: 'Low Risk', value: 'low' },
+                        { title: 'Medium Risk', value: 'medium' },
+                        { title: 'High Risk', value: 'high' },
+                      ]"
+                      variant="outlined"
+                      :color="getRiskColor(riskAssessment.overall_risk_level)"
+                    />
+                  </v-card>
+                </v-col>
+
+                <!-- Notes -->
+                <v-col cols="12">
+                  <v-textarea
+                    v-model="riskAssessment.notes"
+                    label="Assessment Notes"
+                    variant="outlined"
+                    rows="4"
+                    placeholder="Additional comments about the risk assessment..."
+                  />
+                </v-col>
+
+                <!-- Assessment Summary -->
+                <v-col cols="12">
+                  <v-card variant="tonal" :color="getRiskColor(calculatedRiskLevel)">
+                    <v-card-text>
+                      <h5 class="text-subtitle-1 mb-2">Assessment Summary</h5>
+                      <p><strong>Average Score:</strong> {{ averageScore.toFixed(1) }}/10</p>
+                      <p>
+                        <strong>Recommended Risk Level:</strong>
+                        {{ calculatedRiskLevel.toUpperCase() }}
+                      </p>
+                    </v-card-text>
+                  </v-card>
+                </v-col>
+              </v-row>
+            </v-form>
+          </v-card-text>
+
+          <v-divider />
+
+          <v-card-actions>
+            <v-spacer />
+            <v-btn @click="showRiskAssessment = false">Cancel</v-btn>
+            <v-btn color="primary" @click="saveRiskAssessment"> Save Assessment </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+    </v-container>
+  </AdminLayout>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
-import { useAuth } from "@/utils/useAuth";
 import { useLoanApplications, useLoanProducts, useRiskAssessment } from "@/utils/useSmartLoanApi";
 import { getCurrentUser } from "@/utils/useDirectus";
+import AdminLayout from "@/layouts/AdminLayout.vue";
 
 const router = useRouter();
-const { logout } = useAuth();
-
-const drawer = ref(true);
 const loading = ref(false);
 const showDetails = ref(false);
 const showConfirm = ref(false);
@@ -672,7 +540,11 @@ const itemsPerPage = ref(10);
 const currentUser = ref(null);
 
 // API composables
-const { getApplications, approveApplication, rejectApplication } = useLoanApplications();
+const {
+  getApplications,
+  approveApplication: approveApplicationApi,
+  rejectApplication: rejectApplicationApi,
+} = useLoanApplications();
 const { getProducts } = useLoanProducts();
 const { createRiskAssessment, getRiskAssessment } = useRiskAssessment();
 
@@ -736,13 +608,6 @@ const statusOptions = [
   { title: "Under Review", value: "under_review" },
   { title: "Approved", value: "approved" },
   { title: "Rejected", value: "rejected" },
-];
-
-const loanProductOptions = [
-  { title: "Business Loan", value: "Business Loan" },
-  { title: "Personal Loan", value: "Personal Loan" },
-  { title: "Equipment Loan", value: "Equipment Loan" },
-  { title: "Emergency Loan", value: "Emergency Loan" },
 ];
 
 // Methods
@@ -818,9 +683,9 @@ const executeAction = async () => {
       const remarks = `${confirmAction.value === "approve" ? "Approved" : "Rejected"} by ${currentUser.value.first_name} ${currentUser.value.last_name}`;
 
       if (confirmAction.value === "approve") {
-        await approveApplication(selectedApplication.value.id, currentUser.value.id, remarks);
+        await approveApplicationApi(selectedApplication.value.id, currentUser.value.id, remarks);
       } else {
-        await rejectApplication(selectedApplication.value.id, currentUser.value.id, remarks);
+        await rejectApplicationApi(selectedApplication.value.id, currentUser.value.id, remarks);
       }
 
       // Refresh applications list
@@ -970,11 +835,6 @@ const loadApplications = async () => {
   }
 };
 
-const handleLogout = async () => {
-  await logout();
-  router.push("/");
-};
-
 onMounted(async () => {
   try {
     // Get current user
@@ -989,12 +849,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.nav-logo {
-  width: 40px;
-  height: 40px;
-  object-fit: contain;
-}
-
 .info-grid {
   display: grid;
   gap: 12px;
@@ -1028,28 +882,5 @@ onMounted(async () => {
   height: 120px;
   display: flex;
   align-items: center;
-}
-
-:deep(.v-list-item--nav .v-list-item__prepend > .v-icon) {
-  opacity: 0.8;
-}
-
-:deep(.v-list-item--active) {
-  background-color: rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-}
-
-:deep(.v-list-group__items .v-list-item) {
-  padding-inline-start: 56px !important;
-}
-
-@media (max-width: 1263px) {
-  :deep(.v-navigation-drawer) {
-    transform: translateX(-100%) !important;
-  }
-
-  :deep(.v-navigation-drawer--active) {
-    transform: translateX(0) !important;
-  }
 }
 </style>

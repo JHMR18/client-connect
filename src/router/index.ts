@@ -10,7 +10,7 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const { isAuthenticated, checkAuth } = useAuth();
 
-  const publicRoutes = ["/", "/login"];
+  const publicRoutes = ["/", "/login", "/admin/login", "/client/login"];
   const isPublicRoute = publicRoutes.includes(to.path) || to.path === "/";
 
   if (!isPublicRoute && !isAuthenticated.value) {

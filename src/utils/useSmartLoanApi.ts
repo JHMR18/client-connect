@@ -152,29 +152,33 @@ export const useUserProfile = () => {
 export const useLoanApplications = () => {
   const getApplications = async (filters?: any) => {
     try {
-      return await client.request(
-        readItems("loan", {
-          fields: [
-            "*",
-            "client.id",
-            "client.first_name",
-            "client.middle_name",
-            "client.last_name",
-            "client.mobile_number",
-            "client.civil_status",
-            "client.present_address",
-            // For Many-to-Many relationship through junction table
-            "loan_product.loan_products_id.id",
-            "loan_product.loan_products_id.name",
-            "loan_product.loan_products_id.description",
-            "officer_in_charge.id",
-            "officer_in_charge.first_name",
-            "officer_in_charge.last_name",
-          ],
-          filter: filters,
-          sort: ["-application_date"],
-        }),
-      );
+      const query: any = {
+        fields: [
+          "*",
+          "client.id",
+          "client.first_name",
+          "client.middle_name",
+          "client.last_name",
+          "client.mobile_number",
+          "client.civil_status",
+          "client.present_address",
+          // For Many-to-Many relationship through junction table
+          "loan_product.loan_products_id.id",
+          "loan_product.loan_products_id.name",
+          "loan_product.loan_products_id.description",
+          "officer_in_charge.id",
+          "officer_in_charge.first_name",
+          "officer_in_charge.last_name",
+        ],
+        sort: ["-application_date"],
+      };
+
+      // Only add filter if it's provided and not empty
+      if (filters) {
+        query.filter = filters;
+      }
+
+      return await client.request(readItems("loan", query));
     } catch (error) {
       console.error("Error fetching applications:", error);
       throw error;
