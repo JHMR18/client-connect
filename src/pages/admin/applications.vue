@@ -9,7 +9,7 @@
         </div>
 
         <v-btn
-          color="primary"
+          color="error"
           prepend-icon="mdi-refresh"
           @click="loadApplications"
           :loading="loading"
@@ -92,12 +92,12 @@
           <!-- Actions -->
           <template #item.actions="{ item }">
             <div class="d-flex gap-2">
-              <v-btn color="primary" size="small" variant="tonal" @click="viewApplication(item)">
+              <v-btn color="error" size="small" variant="tonal" @click="viewApplication(item)">
                 <v-icon>mdi-eye</v-icon>
               </v-btn>
               <v-btn
                 v-if="item.status === 'pending'"
-                color="info"
+                color="red-darken-2"
                 size="small"
                 variant="tonal"
                 @click="openRiskAssessment(item)"
@@ -279,7 +279,7 @@
                         v-for="doc in selectedApplication.documents"
                         :key="doc.type"
                       >
-                        <v-card class="document-card" variant="tonal" color="primary">
+                        <v-card class="document-card" variant="tonal" color="error">
                           <v-card-text class="text-center">
                             <v-icon size="32" class="mb-2">{{ getDocumentIcon(doc.type) }}</v-icon>
                             <p class="text-caption">{{ doc.type }}</p>
@@ -366,7 +366,7 @@
                 <v-col cols="12" md="6">
                   <v-card variant="outlined" class="pa-4">
                     <h5 class="text-subtitle-1 mb-2">
-                      <v-icon class="me-2" color="primary">mdi-cash-multiple</v-icon>
+                      <v-icon class="me-2" color="error">mdi-cash-multiple</v-icon>
                       Capacity
                     </h5>
                     <p class="text-caption mb-3">Ability to repay the loan</p>
@@ -378,7 +378,7 @@
                       show-ticks="always"
                       tick-size="4"
                       thumb-label
-                      color="primary"
+                      color="error"
                     />
                     <div class="d-flex justify-space-between text-caption">
                       <span>Poor (1)</span>
@@ -391,7 +391,7 @@
                 <v-col cols="12" md="6">
                   <v-card variant="outlined" class="pa-4">
                     <h5 class="text-subtitle-1 mb-2">
-                      <v-icon class="me-2" color="primary">mdi-account-heart</v-icon>
+                      <v-icon class="me-2" color="error">mdi-account-heart</v-icon>
                       Character
                     </h5>
                     <p class="text-caption mb-3">Credit history and willingness to pay</p>
@@ -403,7 +403,7 @@
                       show-ticks="always"
                       tick-size="4"
                       thumb-label
-                      color="primary"
+                      color="error"
                     />
                     <div class="d-flex justify-space-between text-caption">
                       <span>Poor (1)</span>
@@ -416,7 +416,7 @@
                 <v-col cols="12" md="6">
                   <v-card variant="outlined" class="pa-4">
                     <h5 class="text-subtitle-1 mb-2">
-                      <v-icon class="me-2" color="primary">mdi-home</v-icon>
+                      <v-icon class="me-2" color="error">mdi-home</v-icon>
                       Collateral
                     </h5>
                     <p class="text-caption mb-3">Assets that secure the loan</p>
@@ -428,7 +428,7 @@
                       show-ticks="always"
                       tick-size="4"
                       thumb-label
-                      color="primary"
+                      color="error"
                     />
                     <div class="d-flex justify-space-between text-caption">
                       <span>Poor (1)</span>
@@ -441,7 +441,7 @@
                 <v-col cols="12" md="6">
                   <v-card variant="outlined" class="pa-4">
                     <h5 class="text-subtitle-1 mb-2">
-                      <v-icon class="me-2" color="primary">mdi-bank</v-icon>
+                      <v-icon class="me-2" color="error">mdi-bank</v-icon>
                       Capital
                     </h5>
                     <p class="text-caption mb-3">Financial resources and investment</p>
@@ -453,7 +453,7 @@
                       show-ticks="always"
                       tick-size="4"
                       thumb-label
-                      color="primary"
+                      color="error"
                     />
                     <div class="d-flex justify-space-between text-caption">
                       <span>Poor (1)</span>
@@ -512,7 +512,7 @@
           <v-card-actions>
             <v-spacer />
             <v-btn @click="showRiskAssessment = false">Cancel</v-btn>
-            <v-btn color="primary" @click="saveRiskAssessment"> Save Assessment </v-btn>
+            <v-btn color="error" @click="saveRiskAssessment"> Save Assessment </v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -614,22 +614,22 @@ const statusOptions = [
 const getStatusColor = (status: string) => {
   switch (status) {
     case "pending":
-      return "warning";
+      return "orange-darken-2";
     case "approved":
-      return "success";
+      return "green-darken-2";
     case "rejected":
       return "error";
     case "under_review":
-      return "info";
+      return "red-darken-1";
     default:
-      return "primary";
+      return "error";
   }
 };
 
 const getNetIncomeClass = (application: any) => {
   const netIncome = application.monthlyIncome - application.monthlyExpenses;
-  if (netIncome > 10000) return "text-success";
-  if (netIncome > 0) return "text-warning";
+  if (netIncome > 10000) return "text-green-darken-2";
+  if (netIncome > 0) return "text-orange-darken-2";
   return "text-error";
 };
 
@@ -805,7 +805,7 @@ const loadApplications = async () => {
     applications.value = apps.map((app) => ({
       id: app.id,
       clientName: `${app.client?.first_name || "Unknown"} ${app.client?.last_name || ""}`.trim(),
-      loanProduct: app.loan_product?.name || "Unknown",
+      loanProduct: app.loan_product?.[0]?.loan_products_id?.name || "Unknown",
       loanAmount: app.principal_amount,
       termMonths: app.term_months,
       purpose: app.purpose,

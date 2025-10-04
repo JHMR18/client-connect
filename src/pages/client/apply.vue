@@ -328,8 +328,9 @@
                               />
                             </v-col>
                             <v-col cols="12" md="2">
-                              <v-text-field
+                              <v-select
                                 v-model="child.grade"
+                                :items="gradeLevels"
                                 label="Grade Level"
                                 variant="outlined"
                               />
@@ -457,6 +458,7 @@
                           variant="outlined"
                           :rules="[(v) => !!v || 'Loan product is required']"
                           required
+                          @update:model-value="onLoanProductChange"
                         />
                       </v-col>
 
@@ -466,10 +468,19 @@
                           label="Loan Amount (₱)"
                           type="number"
                           variant="outlined"
+                          :hint="selectedProductHints.amount"
+                          persistent-hint
                           :rules="[
                             (v) => !!v || 'Loan amount is required',
                             (v) => v > 0 || 'Loan amount must be positive',
-                            (v) => v <= 1000000 || 'Maximum loan amount is ₱1,000,000',
+                            (v) =>
+                              !selectedProduct ||
+                              v >= selectedProduct.min_amount ||
+                              `Minimum loan amount is ₱${selectedProduct.min_amount.toLocaleString()}`,
+                            (v) =>
+                              !selectedProduct ||
+                              v <= selectedProduct.max_amount ||
+                              `Maximum loan amount is ₱${selectedProduct.max_amount.toLocaleString()}`,
                           ]"
                           required
                         />
@@ -481,10 +492,15 @@
                           label="Loan Term (months)"
                           type="number"
                           variant="outlined"
+                          :hint="selectedProductHints.term"
+                          persistent-hint
                           :rules="[
                             (v) => !!v || 'Loan term is required',
                             (v) => v > 0 || 'Term must be positive',
-                            (v) => v <= 60 || 'Maximum term is 60 months',
+                            (v) =>
+                              !selectedProduct ||
+                              v <= selectedProduct.max_term ||
+                              `Maximum term is ${selectedProduct.max_term} months`,
                           ]"
                           required
                         />
@@ -779,6 +795,27 @@ const { updateUserProfile, getUserProfile } = useUserProfile();
 // Loan products
 const loanProducts = ref([]);
 
+// Grade levels for children
+const gradeLevels = [
+  "Grade 1",
+  "Grade 2",
+  "Grade 3",
+  "Grade 4",
+  "Grade 5",
+  "Grade 6",
+  "Grade 7",
+  "Grade 8",
+  "Grade 9",
+  "Grade 10",
+  "Grade 11 (Senior High)",
+  "Grade 12 (Senior High)",
+  "College 1st Year",
+  "College 2nd Year",
+  "College 3rd Year",
+  "College 4th Year",
+  "College 5th Year",
+];
+
 // Application data
 const application = ref({
   // Personal Information
@@ -850,6 +887,47 @@ const netIncomeColor = computed(() => {
   if (netIncome.value > 0) return "warning";
   return "error";
 });
+
+// Selected loan product
+const selectedProduct = computed(() => {
+  if (!application.value.loanProduct) return null;
+  return loanProducts.value.find((p) => p.id === application.value.loanProduct);
+});
+
+// Product hints
+const selectedProductHints = computed(() => {
+  if (!selectedProduct.value) {
+    return {
+      amount: "Select a loan product first",
+      term: "Select a loan product first",
+    };
+  }
+  return {
+    amount: `Min: ₱${selectedProduct.value.min_amount.toLocaleString()} - Max: ₱${selectedProduct.value.max_amount.toLocaleString()} | Interest Rate: ${selectedProduct.value.interest_rate}%`,
+    term: `Maximum ${selectedProduct.value.max_term} months | Interest Rate: ${selectedProduct.value.interest_rate}%`,
+  };
+});
+
+// Methods
+const onLoanProductChange = () => {
+  // Reset loan amount and term if they exceed the new product's limits
+  if (selectedProduct.value) {
+    if (application.value.loanAmount) {
+      if (application.value.loanAmount < selectedProduct.value.min_amount) {
+        application.value.loanAmount = selectedProduct.value.min_amount;
+      }
+      if (application.value.loanAmount > selectedProduct.value.max_amount) {
+        application.value.loanAmount = selectedProduct.value.max_amount;
+      }
+    }
+    if (
+      application.value.termMonths &&
+      application.value.termMonths > selectedProduct.value.max_term
+    ) {
+      application.value.termMonths = selectedProduct.value.max_term;
+    }
+  }
+};
 
 // Methods
 const addChild = () => {
