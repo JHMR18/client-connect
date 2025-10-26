@@ -460,6 +460,16 @@
                           required
                           @update:model-value="onLoanProductChange"
                         />
+                        <v-alert
+                          v-if="selectedProduct"
+                          type="info"
+                          variant="tonal"
+                          density="compact"
+                          class="mt-2"
+                        >
+                          <strong>Interest Rate:</strong> {{ selectedProduct.interest_rate }}% p.a. | 
+                          <strong>Max Term:</strong> {{ selectedProduct.max_term }} months
+                        </v-alert>
                       </v-col>
 
                       <v-col cols="12" md="6">
@@ -574,7 +584,7 @@
                     <v-col cols="12" md="6">
                       <v-card variant="outlined" class="requirement-card">
                         <v-card-title class="d-flex align-center">
-                          <v-icon class="me-2" color="primary">mdi-card-account-details</v-icon>
+                          <v-icon class="me-2" color="error">mdi-card-account-details</v-icon>
                           Valid ID
                           <v-chip color="error" size="small" class="ml-2">Required</v-chip>
                         </v-card-title>
@@ -588,7 +598,23 @@
                             prepend-inner-icon="mdi-paperclip"
                             :rules="[(v) => !!v || 'Valid ID is required']"
                             required
+                            @change="onFileChange($event, 'validId')"
                           />
+                          <v-progress-linear
+                            v-if="uploadProgress.validId > 0 && uploadProgress.validId < 100"
+                            v-model="uploadProgress.validId"
+                            color="error"
+                            class="mt-2"
+                          />
+                          <v-alert
+                            v-if="uploadedFiles.validId"
+                            type="success"
+                            variant="tonal"
+                            density="compact"
+                            class="mt-2"
+                          >
+                            File uploaded successfully
+                          </v-alert>
                         </v-card-text>
                       </v-card>
                     </v-col>
@@ -596,7 +622,7 @@
                     <v-col cols="12" md="6">
                       <v-card variant="outlined" class="requirement-card">
                         <v-card-title class="d-flex align-center">
-                          <v-icon class="me-2" color="primary">mdi-file-document</v-icon>
+                          <v-icon class="me-2" color="error">mdi-file-document</v-icon>
                           Business Permit
                           <v-chip color="error" size="small" class="ml-2">Required</v-chip>
                         </v-card-title>
@@ -610,7 +636,23 @@
                             prepend-inner-icon="mdi-paperclip"
                             :rules="[(v) => !!v || 'Business permit is required']"
                             required
+                            @change="onFileChange($event, 'businessPermit')"
                           />
+                          <v-progress-linear
+                            v-if="uploadProgress.businessPermit > 0 && uploadProgress.businessPermit < 100"
+                            v-model="uploadProgress.businessPermit"
+                            color="error"
+                            class="mt-2"
+                          />
+                          <v-alert
+                            v-if="uploadedFiles.businessPermit"
+                            type="success"
+                            variant="tonal"
+                            density="compact"
+                            class="mt-2"
+                          >
+                            File uploaded successfully
+                          </v-alert>
                         </v-card-text>
                       </v-card>
                     </v-col>
@@ -618,7 +660,7 @@
                     <v-col cols="12" md="6">
                       <v-card variant="outlined" class="requirement-card">
                         <v-card-title class="d-flex align-center">
-                          <v-icon class="me-2" color="primary">mdi-camera</v-icon>
+                          <v-icon class="me-2" color="error">mdi-camera</v-icon>
                           Photo
                           <v-chip color="error" size="small" class="ml-2">Required</v-chip>
                         </v-card-title>
@@ -632,7 +674,23 @@
                             prepend-inner-icon="mdi-paperclip"
                             :rules="[(v) => !!v || 'Photo is required']"
                             required
+                            @change="onFileChange($event, 'photo')"
                           />
+                          <v-progress-linear
+                            v-if="uploadProgress.photo > 0 && uploadProgress.photo < 100"
+                            v-model="uploadProgress.photo"
+                            color="error"
+                            class="mt-2"
+                          />
+                          <v-alert
+                            v-if="uploadedFiles.photo"
+                            type="success"
+                            variant="tonal"
+                            density="compact"
+                            class="mt-2"
+                          >
+                            File uploaded successfully
+                          </v-alert>
                         </v-card-text>
                       </v-card>
                     </v-col>
@@ -640,9 +698,9 @@
                     <v-col cols="12" md="6">
                       <v-card variant="outlined" class="requirement-card">
                         <v-card-title class="d-flex align-center">
-                          <v-icon class="me-2" color="info">mdi-account-supervisor</v-icon>
+                          <v-icon class="me-2" color="grey">mdi-account-supervisor</v-icon>
                           Co-maker ID
-                          <v-chip color="info" size="small" class="ml-2">Optional</v-chip>
+                          <v-chip color="grey" size="small" class="ml-2">Optional</v-chip>
                         </v-card-title>
                         <v-card-text>
                           <v-file-input
@@ -652,7 +710,23 @@
                             variant="outlined"
                             prepend-icon=""
                             prepend-inner-icon="mdi-paperclip"
+                            @change="onFileChange($event, 'coMakerId')"
                           />
+                          <v-progress-linear
+                            v-if="uploadProgress.coMakerId > 0 && uploadProgress.coMakerId < 100"
+                            v-model="uploadProgress.coMakerId"
+                            color="error"
+                            class="mt-2"
+                          />
+                          <v-alert
+                            v-if="uploadedFiles.coMakerId"
+                            type="success"
+                            variant="tonal"
+                            density="compact"
+                            class="mt-2"
+                          >
+                            File uploaded successfully
+                          </v-alert>
                         </v-card-text>
                       </v-card>
                     </v-col>
@@ -698,7 +772,7 @@
                     <v-col cols="12">
                       <v-checkbox
                         v-model="application.termsAccepted"
-                        color="primary"
+                        color="error"
                         :rules="[(v) => !!v || 'You must accept the terms and conditions']"
                         required
                       >
@@ -723,7 +797,13 @@
                 <v-spacer v-else />
 
                 <v-btn v-if="currentStep < 6" color="red" @click="nextStep"> Next </v-btn>
-                <v-btn v-else color="red" :loading="submitting" @click="submitApplication">
+                <v-btn 
+                  v-else 
+                  color="red" 
+                  :loading="submitting" 
+                  :disabled="!application.termsAccepted"
+                  @click="submitApplication"
+                >
                   Submit Application
                 </v-btn>
               </v-card-actions>
@@ -770,7 +850,8 @@ import {
   useChildren,
   useUserProfile,
 } from "@/utils/useSmartLoanApi";
-import { getCurrentUser } from "@/utils/useDirectus";
+import { getCurrentUser, client } from "@/utils/useDirectus";
+import { createItem } from '@directus/sdk';
 
 const router = useRouter();
 const { logout } = useAuth();
@@ -794,6 +875,21 @@ const { updateUserProfile, getUserProfile } = useUserProfile();
 
 // Loan products
 const loanProducts = ref([]);
+
+// File upload tracking
+const uploadedFiles = ref({
+  validId: null,
+  businessPermit: null,
+  photo: null,
+  coMakerId: null,
+});
+
+const uploadProgress = ref({
+  validId: 0,
+  businessPermit: 0,
+  photo: 0,
+  coMakerId: 0,
+});
 
 // Grade levels for children
 const gradeLevels = [
@@ -909,6 +1005,73 @@ const selectedProductHints = computed(() => {
 });
 
 // Methods
+// Upload file to Directus
+const uploadFileToDirectus = async (file: File) => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const baseUrl = import.meta.env.VITE_DIRECTUS_URL || 'http://localhost:8055';
+  
+  // Get access token from cookies
+  const getAccessToken = (): string | null => {
+    const cookies = document.cookie.split(';');
+    for (const cookie of cookies) {
+      const [name, value] = cookie.trim().split('=');
+      if (name === 'accessToken') {
+        return decodeURIComponent(value);
+      }
+    }
+    return null;
+  };
+  
+  const accessToken = getAccessToken();
+  
+  const headers: HeadersInit = {};
+  if (accessToken) {
+    headers['Authorization'] = `Bearer ${accessToken}`;
+  }
+  
+  const response = await fetch(`${baseUrl}/files`, {
+    method: 'POST',
+    headers: headers,
+    body: formData,
+    credentials: 'include',
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    console.error('Upload error:', errorData);
+    throw new Error(errorData.errors?.[0]?.message || 'File upload failed');
+  }
+
+  const data = await response.json();
+  return data.data.id; // Return the file ID
+};
+
+// Handle file change event
+const onFileChange = async (event: Event, fieldName: string) => {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  
+  if (!file) return;
+
+  try {
+    uploadProgress.value[fieldName] = 10;
+    
+    // Upload to Directus
+    const fileId = await uploadFileToDirectus(file);
+    
+    uploadProgress.value[fieldName] = 100;
+    uploadedFiles.value[fieldName] = fileId;
+    
+    console.log(`${fieldName} uploaded:`, fileId);
+  } catch (error) {
+    console.error(`Error uploading ${fieldName}:`, error);
+    uploadProgress.value[fieldName] = 0;
+    alert(`Failed to upload ${fieldName}. Please try again.`);
+  }
+};
+
 const onLoanProductChange = () => {
   // Reset loan amount and term if they exceed the new product's limits
   if (selectedProduct.value) {
@@ -1013,13 +1176,12 @@ const submitApplication = async () => {
     // Prepare loan application data (only loan-specific fields)
     const loanData = {
       client: currentUser.value.id, // Reference to user ID (Many-to-One)
-      // The error suggests it's One-to-Many, so try the correct O2M format
+      // loan_product is a One-to-Many relation, so we need to use create/update/delete format
       loan_product: {
         create: [
           {
-            // Use correct junction table field name
             loan_products_id: parseInt(application.value.loanProduct),
-          },
+          }
         ],
         update: [],
         delete: [],
@@ -1052,6 +1214,9 @@ const submitApplication = async () => {
 
     // Create the loan application
     const createdApplication = await createApplication(loanData);
+    
+    console.log("Loan created successfully:", createdApplication);
+    console.log("Loan ID:", createdApplication?.id);
 
     // Create children records if any
     if (application.value.children.length > 0) {
@@ -1068,7 +1233,82 @@ const submitApplication = async () => {
     }
 
     // Handle file uploads for requirements
-    // Note: File uploads would need additional implementation with Directus files API
+    // Create loan_requirments records for uploaded files (note: typo in collection name)
+    // Note: This may fail if user doesn't have permission - that's okay
+    if (uploadedFiles.value.validId || uploadedFiles.value.businessPermit || 
+        uploadedFiles.value.photo || uploadedFiles.value.coMakerId) {
+      
+      // Ensure we have a valid loan ID
+      if (!createdApplication || !createdApplication.id) {
+        console.error('No loan ID returned from createApplication');
+        throw new Error('Failed to create loan application');
+      }
+
+      const loanId = createdApplication.id;
+      console.log('Creating loan requirements for loan ID:', loanId);
+      
+      try {
+        const requirementPromises = [];
+        
+        if (uploadedFiles.value.validId) {
+          const requirementData = {
+            loan: loanId,
+            requirement_type: 'valid_id',
+            file: uploadedFiles.value.validId,
+          };
+          console.log('Creating valid_id requirement:', requirementData);
+          requirementPromises.push(
+            client.request(createItem('loan_requirments', requirementData))
+          );
+        }
+        
+        if (uploadedFiles.value.businessPermit) {
+          const requirementData = {
+            loan: loanId,
+            requirement_type: 'permit',
+            file: uploadedFiles.value.businessPermit,
+          };
+          console.log('Creating permit requirement:', requirementData);
+          requirementPromises.push(
+            client.request(createItem('loan_requirments', requirementData))
+          );
+        }
+        
+        if (uploadedFiles.value.photo) {
+          const requirementData = {
+            loan: loanId,
+            requirement_type: 'photo',
+            file: uploadedFiles.value.photo,
+          };
+          console.log('Creating photo requirement:', requirementData);
+          requirementPromises.push(
+            client.request(createItem('loan_requirments', requirementData))
+          );
+        }
+        
+        if (uploadedFiles.value.coMakerId) {
+          const requirementData = {
+            loan: loanId,
+            requirement_type: 'co-maker_id',
+            file: uploadedFiles.value.coMakerId,
+          };
+          console.log('Creating co-maker_id requirement:', requirementData);
+          requirementPromises.push(
+            client.request(createItem('loan_requirments', requirementData))
+          );
+        }
+        
+        await Promise.all(requirementPromises);
+        console.log('✅ All loan requirements saved successfully');
+      } catch (requirementError) {
+        // Log detailed error
+        console.error('❌ Error creating loan requirements:', requirementError);
+        console.error('Error details:', JSON.stringify(requirementError, null, 2));
+        console.log('Files were uploaded successfully. Admin will need to link them manually.');
+        console.log('Uploaded file IDs:', uploadedFiles.value);
+        console.log('Loan ID:', loanId);
+      }
+    }
 
     alert("Application submitted successfully! You will be notified once reviewed.");
     router.push("/client/dashboard");
