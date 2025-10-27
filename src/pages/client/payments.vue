@@ -202,7 +202,7 @@
 
               <!-- Amount Paid -->
               <template #item.amount_paid="{ item }">
-                <span v-if="item.amount_paid">
+                <span v-if="item.amount_paid != null && item.amount_paid > 0">
                   ₱{{ item.amount_paid.toLocaleString() }}
                 </span>
                 <span v-else class="text-medium-emphasis">—</span>
@@ -320,10 +320,11 @@
                   type="number"
                   variant="outlined"
                   prepend-inner-icon="mdi-cash"
+                  :hint="`Amount due: ₱${selectedSchedule?.amount_due?.toLocaleString() || 0}. You can pay more or less.`"
+                  persistent-hint
                   :rules="[
                     v => !!v || 'Payment amount is required',
-                    v => v > 0 || 'Amount must be greater than 0',
-                    v => v <= (selectedSchedule?.amount_due || 0) || 'Cannot exceed amount due'
+                    v => v > 0 || 'Amount must be greater than 0'
                   ]"
                   required
                 />
@@ -490,6 +491,7 @@ const generateAmortizationSchedule = (loan: any) => {
       period: i,
       due_date: dueDate.toISOString().split('T')[0],
       amount_due: Math.round(monthlyPayment * 100) / 100,
+      amount_paid: 0, // Initialize to 0
       status: 'upcoming',
       loan: loan.id
     })
@@ -603,7 +605,8 @@ const loadLoanDetails = async () => {
         
         await client.request(
           updateItem('amortization_schedule', scheduleItem.id, {
-            amount_due: calculatedAmount
+            amount_due: calculatedAmount,
+            amount_paid: 0 // Initialize to 0
           })
         )
       }
@@ -622,6 +625,17 @@ const loadLoanDetails = async () => {
     }
     
     console.log('Final schedule before setting:', schedule)
+    
+    // Ensure amount_paid is initialized
+    schedule = schedule.map((item: any) => {
+      console.log('Schedule item before init:', { id: item.id, amount_paid: item.amount_paid, type: typeof item.amount_paid })
+      return {
+        ...item,
+        amount_paid: item.amount_paid || 0
+      }
+    })
+    
+    console.log('Schedule after amount_paid init:', schedule)
     
     // Check if schedules are overdue
     const today = new Date()
@@ -691,32 +705,107 @@ const submitPayment = async () => {
   submittingPayment.value = true
   
   try {
+    const amountPaid = paymentData.value.amount_paid || 0
+    const amountDue = selectedSchedule.value.amount_due || 0
+    
+    console.log(`Processing payment: Paid=${amountPaid}, Due=${amountDue}`)
+    
     // Calculate remaining balance
-    const newBalance = remainingBalance.value - (paymentData.value.amount_paid || 0)
+    const newBalance = remainingBalance.value - amountPaid
     
     // Create payment record
     const payment = await client.request(
       createItem('payments', {
         loan: selectedLoanId.value,
         payment_date: new Date().toISOString().split('T')[0],
-        amount_paid: paymentData.value.amount_paid,
+        amount_paid: amountPaid,
         remaining_balance: newBalance,
         payment_method: paymentData.value.payment_method,
         receipt_number: paymentData.value.receipt_number || `RCP-${Date.now()}`
       })
     )
     
-    // Update amortization schedule status
-    if (paymentData.value.amount_paid === selectedSchedule.value.amount_due) {
+    // Handle payment application to schedule
+    if (amountPaid >= amountDue) {
+      // Full payment or overpayment
+      console.log('✅ Full payment or overpayment')
+      
+      // Mark current schedule as paid
       await client.request(
         updateItem('amortization_schedule', selectedSchedule.value.id, {
           status: 'paid',
-          amount_paid: paymentData.value.amount_paid
+          amount_paid: amountDue
         })
       )
+      
+      // Handle overpayment - apply to next unpaid schedules
+      let remainingPayment = amountPaid - amountDue
+      console.log(`Overpayment: ₱${remainingPayment}`)
+      
+      if (remainingPayment > 0) {
+        // Get all unpaid schedules sorted by due date
+        const unpaidSchedules = amortizationSchedule.value
+          .filter((s: any) => s.status === 'upcoming' || s.status === 'overdue')
+          .filter((s: any) => s.id !== selectedSchedule.value.id)
+          .sort((a: any, b: any) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
+        
+        console.log(`Applying overpayment to ${unpaidSchedules.length} unpaid schedules`)
+        
+        for (const schedule of unpaidSchedules) {
+          if (remainingPayment <= 0) break
+          
+          const scheduleDue = schedule.amount_due || 0
+          
+          if (remainingPayment >= scheduleDue) {
+            // Can pay this schedule in full
+            console.log(`✅ Paying schedule ${schedule.id} in full: ₱${scheduleDue}`)
+            await client.request(
+              updateItem('amortization_schedule', schedule.id, {
+                status: 'paid',
+                amount_paid: scheduleDue
+              })
+            )
+            remainingPayment -= scheduleDue
+          } else {
+            // Partial payment on this schedule
+            console.log(`⚠️ Partial payment on schedule ${schedule.id}: ₱${remainingPayment} of ₱${scheduleDue}`)
+            const newAmountDue = scheduleDue - remainingPayment
+            await client.request(
+              updateItem('amortization_schedule', schedule.id, {
+                amount_due: newAmountDue,
+                amount_paid: remainingPayment
+              })
+            )
+            remainingPayment = 0
+          }
+        }
+        
+        if (remainingPayment > 0) {
+          console.log(`ℹ️ Excess payment: ₱${remainingPayment} (all schedules paid)`)
+          alert(`Payment successful! You have an excess of ₱${remainingPayment.toLocaleString()} which can be applied to future payments or refunded.`)
+        } else {
+          alert('Payment submitted successfully!')
+        }
+      } else {
+        alert('Payment submitted successfully!')
+      }
+    } else {
+      // Partial payment (less than amount due)
+      console.log('⚠️ Partial payment')
+      
+      const newAmountDue = amountDue - amountPaid
+      console.log(`Updating schedule ${selectedSchedule.value.id}: New amount due = ₱${newAmountDue}`)
+      
+      await client.request(
+        updateItem('amortization_schedule', selectedSchedule.value.id, {
+          amount_due: newAmountDue,
+          amount_paid: amountPaid
+        })
+      )
+      
+      alert(`Partial payment of ₱${amountPaid.toLocaleString()} recorded. Remaining for this period: ₱${newAmountDue.toLocaleString()}`)
     }
     
-    alert('Payment submitted successfully!')
     closePaymentDialog()
     await loadLoanDetails()
   } catch (error) {
