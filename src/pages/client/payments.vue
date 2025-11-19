@@ -91,33 +91,42 @@
           </p>
         </div>
 
-        <!-- Loan Selector -->
-        <v-card class="mb-6">
+        <!-- Active Loans Summary -->
+        <v-card v-if="activeLoans.length > 0" class="mb-6">
+          <v-card-title>
+            <v-icon class="me-2">mdi-briefcase</v-icon>
+            Active Business Loans
+          </v-card-title>
           <v-card-text>
             <v-row>
-              <v-col cols="12" md="6">
-                <v-select
-                  v-model="selectedLoanId"
-                  :items="activeLoans"
-                  item-title="display_name"
-                  item-value="id"
-                  label="Select Loan"
+              <v-col v-for="loan in activeLoans" :key="loan.id" cols="12" md="6" lg="4">
+                <v-card
                   variant="outlined"
-                  prepend-inner-icon="mdi-file-document"
-                  :loading="loadingLoans"
-                  @update:model-value="loadLoanDetails"
+                  :class="{ 'border-primary border-2': selectedLoanId === loan.id }"
+                  @click="selectLoan(loan.id)"
+                  style="cursor: pointer"
+                  hover
                 >
-                  <template #item="{ props, item }">
-                    <v-list-item v-bind="props">
-                      <template #prepend>
-                        <v-icon>mdi-file-document</v-icon>
-                      </template>
-                      <template #subtitle>
-                        ₱{{ item.raw.principal_amount?.toLocaleString() }} - {{ item.raw.term_months }} months
-                      </template>
-                    </v-list-item>
-                  </template>
-                </v-select>
+                  <v-card-title class="d-flex justify-space-between align-center">
+                    <span class="text-subtitle-2">Business Loan #{{ String(loan.id).substring(0, 8) }}</span>
+                    <v-chip :color="getStatusColor(loan.status)" size="small" variant="flat">
+                      {{ loan.status }}
+                    </v-chip>
+                  </v-card-title>
+                  <v-card-text>
+                    <div class="text-body-2">
+                      <div class="mb-2">
+                        <strong>Amount:</strong> ₱{{ loan.principal_amount?.toLocaleString() }}
+                      </div>
+                      <div class="mb-2">
+                        <strong>Term:</strong> {{ loan.term_days }} days
+                      </div>
+                      <div>
+                        <strong>Purpose:</strong> {{ loan.purpose || 'General' }}
+                      </div>
+                    </div>
+                  </v-card-text>
+                </v-card>
               </v-col>
             </v-row>
           </v-card-text>
@@ -137,12 +146,12 @@
           </v-col>
 
           <v-col cols="12" sm="6" md="3">
-            <v-card color="warning" variant="flat">
+            <v-card color="primary" variant="flat">
               <v-card-text>
                 <div class="text-h4 font-weight-bold text-white">
-                  ₱{{ totalAmountDue.toLocaleString() }}
+                  ₱{{ calculateDailyPayment(selectedLoan).toLocaleString() }}
                 </div>
-                <div class="text-subtitle-2 text-white opacity-80">Total Amount Due</div>
+                <div class="text-subtitle-2 text-white opacity-80">Daily Payment</div>
               </v-card-text>
             </v-card>
           </v-col>
@@ -170,39 +179,168 @@
           </v-col>
         </v-row>
 
+        <!-- Daily Payment Breakdown -->
+        <v-card v-if="selectedLoan" class="mb-6">
+          <v-card-title>
+            <v-icon class="me-2">mdi-cash-clock</v-icon>
+            Daily Payment Breakdown
+          </v-card-title>
+          <v-card-text>
+            <v-row dense>
+              <v-col cols="12" md="6">
+                <div class="d-flex justify-space-between align-center pa-3 bg-grey-lighten-4 rounded">
+                  <span class="font-weight-medium">Principal Amount:</span>
+                  <span class="font-weight-bold">₱{{ selectedLoan.principal_amount?.toLocaleString() }}</span>
+                </div>
+                <div class="d-flex justify-space-between align-center pa-3 bg-red-lighten-4 rounded mt-2">
+                  <span class="font-weight-medium">Interest (17%):</span>
+                  <span class="font-weight-bold text-error">₱{{ (selectedLoan.principal_amount * 0.17).toLocaleString() }}</span>
+                </div>
+                <div class="d-flex justify-space-between align-center pa-3 bg-orange-lighten-4 rounded mt-2">
+                  <span class="font-weight-medium">Processing Fee:</span>
+                  <span class="font-weight-bold">₱150</span>
+                </div>
+                <div class="d-flex justify-space-between align-center pa-3 bg-orange-lighten-4 rounded mt-2">
+                  <span class="font-weight-medium">Doc Stamp:</span>
+                  <span class="font-weight-bold">₱45</span>
+                </div>
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <div class="pa-3 bg-primary-lighten-4 rounded">
+                  <div class="d-flex justify-space-between align-center mb-2">
+                    <span class="font-weight-medium">Daily Payment:</span>
+                    <span class="font-weight-bold text-primary">₱{{ calculateDailyPayment(selectedLoan).toLocaleString() }}</span>
+                  </div>
+                  <div class="d-flex justify-space-between align-center mb-2">
+                    <span class="font-weight-medium">Payment Period:</span>
+                    <span class="font-weight-bold">{{ selectedLoan.term_days }} days</span>
+                  </div>
+                  <div class="d-flex justify-space-between align-center mb-2">
+                    <span class="font-weight-medium">Total to Pay:</span>
+                    <span class="font-weight-bold text-error">₱{{ (calculateDailyPayment(selectedLoan) * selectedLoan.term_days).toLocaleString() }}</span>
+                  </div>
+                </div>
+
+                <v-alert type="info" variant="tonal" class="mt-3">
+                  <v-icon start>mdi-information</v-icon>
+                  <div class="text-body-2">
+                    <strong>Payment Progress:</strong> You've completed {{ Math.round((totalPaid / totalAmountDue) * 100) }}% of your daily payment obligation.
+                  </div>
+                </v-alert>
+
+                <!-- Progress bar for visual representation -->
+                <div class="mt-3">
+                  <div class="text-caption mb-1">Payment Progress</div>
+                  <v-progress-linear
+                    :model-value="(totalPaid / totalAmountDue) * 100"
+                    color="success"
+                    height="20"
+                    rounded
+                  >
+                    <template #default="{ value }">
+                      <small>{{ Math.round(value) }}%</small>
+                    </template>
+                  </v-progress-linear>
+                </div>
+              </v-col>
+            </v-row>
+          </v-card-text>
+        </v-card>
+
         <!-- Amortization Schedule -->
         <v-card v-if="selectedLoan" class="mb-6">
           <v-card-title class="d-flex justify-space-between align-center">
-            <span>Amortization Schedule</span>
+            <div>
+              <span>Daily Payment Schedule</span>
+              <div class="text-caption text-medium-emphasis">
+                Daily ₱{{ calculateDailyPayment(selectedLoan).toLocaleString() }} payments for {{ selectedLoan.term_days }} days
+              </div>
+            </div>
             <v-chip :color="getStatusColor(selectedLoan.status)" size="small">
               {{ selectedLoan.status }}
             </v-chip>
           </v-card-title>
 
           <v-card-text>
+            <!-- Quick Stats -->
+            <v-row class="mb-4">
+              <v-col cols="12" md="3">
+                <div class="text-center pa-3 bg-blue-lighten-4 rounded">
+                  <div class="text-h4 text-primary font-weight-bold">{{ selectedLoan.term_days }}</div>
+                  <div class="text-caption">Total Days</div>
+                </div>
+              </v-col>
+              <v-col cols="12" md="3">
+                <div class="text-center pa-3 bg-green-lighten-4 rounded">
+                  <div class="text-h4 text-success font-weight-bold">
+                    {{ amortizationSchedule.filter(s => s.status === 'paid').length }}
+                  </div>
+                  <div class="text-caption">Days Paid</div>
+                </div>
+              </v-col>
+              <v-col cols="12" md="3">
+                <div class="text-center pa-3 bg-orange-lighten-4 rounded">
+                  <div class="text-h4 text-orange font-weight-bold">
+                    {{ amortizationSchedule.filter(s => s.status === 'upcoming').length }}
+                  </div>
+                  <div class="text-caption">Days Remaining</div>
+                </div>
+              </v-col>
+              <v-col cols="12" md="3">
+                <div class="text-center pa-3 bg-red-lighten-4 rounded">
+                  <div class="text-h4 text-error font-weight-bold">
+                    {{ amortizationSchedule.filter(s => s.status === 'overdue').length }}
+                  </div>
+                  <div class="text-caption">Days Overdue</div>
+                </div>
+              </v-col>
+            </v-row>
+
             <v-data-table
               :headers="scheduleHeaders"
               :items="amortizationSchedule"
               :loading="loadingSchedule"
               item-value="id"
               class="elevation-0"
+              :row-class="getRowClass"
             >
+              <!-- Period (Day #) -->
+              <template #item.period="{ item }">
+                <div class="d-flex align-center">
+                  <span class="font-weight-medium">Day {{ item.period }}</span>
+                  <v-chip
+                    v-if="item.is_weekend"
+                    size="x-small"
+                    color="orange"
+                    variant="tonal"
+                    class="ml-2"
+                  >
+                    Weekend
+                  </v-chip>
+                </div>
+              </template>
+
               <!-- Due Date -->
               <template #item.due_date="{ item }">
-                {{ formatDate(item.due_date) }}
+                <div>
+                  {{ formatDate(item.due_date) }}
+                  <div class="text-caption" :class="item.is_weekend ? 'text-orange' : 'text-medium-emphasis'">
+                    {{ getDayName(item.due_date) }}
+                  </div>
+                </div>
               </template>
 
               <!-- Amount Due -->
               <template #item.amount_due="{ item }">
-                <span v-if="item.amount_due != null">
-                  ₱{{ item.amount_due.toLocaleString() }}
-                </span>
-                <span v-else class="text-medium-emphasis">—</span>
+                <div class="font-weight-medium">
+                  ₱{{ item.amount_due?.toLocaleString() || 0 }}
+                </div>
               </template>
 
               <!-- Amount Paid -->
               <template #item.amount_paid="{ item }">
-                <span v-if="item.amount_paid != null && item.amount_paid > 0">
+                <span v-if="item.amount_paid != null && item.amount_paid > 0" class="text-success font-weight-medium">
                   ₱{{ item.amount_paid.toLocaleString() }}
                 </span>
                 <span v-else class="text-medium-emphasis">—</span>
@@ -224,7 +362,7 @@
                   variant="tonal"
                   @click="openPaymentDialog(item)"
                 >
-                  Pay Now
+                  Pay Daily
                 </v-btn>
                 <v-chip v-else color="success" size="small" variant="flat">
                   <v-icon start size="small">mdi-check</v-icon>
@@ -283,12 +421,12 @@
         <!-- Empty State -->
         <v-card v-if="!selectedLoan && !loadingLoans" class="text-center pa-8">
           <v-icon size="64" color="grey" class="mb-4">mdi-credit-card-off</v-icon>
-          <h3 class="text-h6 mb-2">No Active Loans</h3>
+          <h3 class="text-h6 mb-2">No Active Business Loans</h3>
           <p class="text-medium-emphasis mb-4">
-            You don't have any active loans to make payments on.
+            You don't have any active business loans to make payments on.
           </p>
-          <v-btn color="error" prepend-icon="mdi-file-document-plus" @click="$router.push('/client/apply')">
-            Apply for a Loan
+          <v-btn color="error" prepend-icon="mdi-briefcase" @click="$router.push('/client/apply')">
+            Apply for Business Loan
           </v-btn>
         </v-card>
       </v-container>
@@ -401,9 +539,9 @@ const paymentData = ref({
 const paymentMethods = ['cash', 'bank_transfer', 'gcash']
 
 const scheduleHeaders = [
-  { title: '#', key: 'period', sortable: false },
-  { title: 'Due Date', key: 'due_date' },
-  { title: 'Amount Due', key: 'amount_due' },
+  { title: 'Day #', key: 'period', sortable: false },
+  { title: 'Date', key: 'due_date' },
+  { title: 'Daily Payment', key: 'amount_due' },
   { title: 'Amount Paid', key: 'amount_paid' },
   { title: 'Status', key: 'status' },
   { title: 'Actions', key: 'actions', sortable: false }
@@ -417,19 +555,28 @@ const paymentHeaders = [
   { title: 'Balance After', key: 'remaining_balance' }
 ]
 
+// Calculate daily payment
+const calculateDailyPayment = (loan: any) => {
+  const principal = loan.principal_amount || 0
+  const termDays = loan.term_days || 0
+  return termDays > 0 ? Math.round(principal / termDays) : 0
+}
+
 // Computed
 const totalAmountDue = computed(() => {
   if (!selectedLoan.value) return 0
   const principal = selectedLoan.value.principal_amount || 0
-  
-  // Get interest rate from loan or loan product
-  let interestRate = selectedLoan.value.interest_rate
-  if (!interestRate && selectedLoan.value.loan_product && selectedLoan.value.loan_product.length > 0) {
-    interestRate = selectedLoan.value.loan_product[0].loan_products_id?.interest_rate
-  }
-  
-  const totalInterest = (principal * (interestRate || 0) / 100)
-  return principal + totalInterest
+
+  // Business Loan has 17% interest rate
+  const interestRate = 17
+  const totalInterest = (principal * interestRate / 100)
+
+  // Add processing fee and doc stamp
+  const processingFee = 150
+  const docStamp = 45
+  const loanDischarge = principal // Daily payment scheme includes full principal repayment
+
+  return principal + totalInterest + processingFee + docStamp
 })
 
 const totalPaid = computed(() => {
@@ -443,63 +590,66 @@ const remainingBalance = computed(() => {
 // Generate amortization schedule based on loan details
 const generateAmortizationSchedule = (loan: any) => {
   const principal = loan.principal_amount || 0
-  
-  // Get interest rate from loan or loan product
-  let interestRate = loan.interest_rate
-  if (!interestRate && loan.loan_product && loan.loan_product.length > 0) {
-    interestRate = loan.loan_product[0].loan_products_id?.interest_rate
-  }
-  
-  if (!interestRate) {
-    console.warn('No interest rate found for loan, using 0%')
-    interestRate = 0
-  }
-  
-  const annualRate = (interestRate || 0) / 100
-  const monthlyRate = annualRate / 12
-  const termMonths = loan.term_months || 0
-  
-  console.log('Generating schedule with:', { principal, interestRate, termMonths, monthlyRate })
-  
-  if (termMonths === 0) {
-    console.error('Cannot generate schedule: term_months is 0')
+  const termDays = loan.term_days || 0
+
+  console.log('Generating daily schedule with:', { principal, termDays })
+
+  if (termDays === 0) {
+    console.error('Cannot generate schedule: term_days is 0')
     return []
   }
-  
-  // Calculate monthly payment using amortization formula
-  let monthlyPayment = 0
-  
-  if (monthlyRate === 0) {
-    // No interest, simple division
-    monthlyPayment = principal / termMonths
-  } else {
-    // With interest, use amortization formula
-    monthlyPayment = principal * (monthlyRate * Math.pow(1 + monthlyRate, termMonths)) / 
-                          (Math.pow(1 + monthlyRate, termMonths) - 1)
-  }
-  
-  console.log('Calculated monthly payment:', monthlyPayment)
-  
+
+  // Business Loan daily payment calculation
+  const dailyPayment = Math.round(principal / termDays)
+
+  console.log('Calculated daily payment:', dailyPayment)
+
   const schedule = []
-  const approvalDate = new Date(loan.approval_date || loan.application_date)
-  
-  for (let i = 1; i <= termMonths; i++) {
-    const dueDate = new Date(approvalDate)
-    dueDate.setMonth(dueDate.getMonth() + i)
-    
-    schedule.push({
-      period: i,
-      due_date: dueDate.toISOString().split('T')[0],
-      amount_due: Math.round(monthlyPayment * 100) / 100,
-      amount_paid: 0, // Initialize to 0
-      status: 'upcoming',
-      loan: loan.id
-    })
+  const startDate = new Date(loan.approval_date || loan.application_date)
+
+  // Generate daily schedule
+  for (let day = 1; day <= termDays; day++) {
+    const dueDate = new Date(startDate)
+    dueDate.setDate(dueDate.getDate() + day)
+
+    // Skip weekends (optional - remove if payments should be every day including weekends)
+    const dayOfWeek = dueDate.getDay()
+    if (dayOfWeek === 0 || dayOfWeek === 6) { // 0 = Sunday, 6 = Saturday
+      // You can choose to include or exclude weekends
+      // For now, I'll include weekends but mark them differently
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
+
+      schedule.push({
+        period: day,
+        due_date: dueDate.toISOString().split('T')[0],
+        amount_due: dailyPayment,
+        amount_paid: 0, // Initialize to 0
+        status: 'upcoming',
+        loan: loan.id,
+        is_weekend: isWeekend
+      })
+    } else {
+      schedule.push({
+        period: day,
+        due_date: dueDate.toISOString().split('T')[0],
+        amount_due: dailyPayment,
+        amount_paid: 0, // Initialize to 0
+        status: 'upcoming',
+        loan: loan.id,
+        is_weekend: false
+      })
+    }
   }
-  
-  console.log('Generated schedule:', schedule)
-  
+
+  console.log('Generated daily schedule:', schedule)
+
   return schedule
+}
+
+// Select and load specific loan
+const selectLoan = async (loanId: string) => {
+  selectedLoanId.value = loanId
+  await loadLoanDetails()
 }
 
 // Load active loans
@@ -507,29 +657,30 @@ const loadActiveLoans = async () => {
   loadingLoans.value = true
   try {
     currentUser.value = await getCurrentUser()
-    
+
     console.log('Loading loans for user:', currentUser.value.id)
-    
+
     const loans = await client.request(
       readItems('loan', {
         filter: {
           client: { _eq: currentUser.value.id },
           status: { _in: ['active', 'approved'] }
         },
-        fields: ['*', 'loan_product.loan_products_id.*']
+        fields: ['*']
       })
     )
-    
+
     console.log('Loaded loans:', loans)
-    
+
     activeLoans.value = loans.map((loan: any) => ({
       ...loan,
-      display_name: `Loan #${String(loan.id).substring(0, 8)} - ${loan.purpose || 'General'}`
+      display_name: `Business Loan #${String(loan.id).substring(0, 8)} - ${loan.purpose || 'General'}`
     }))
-    
+
     console.log('Active loans:', activeLoans.value)
-    
+
     if (activeLoans.value.length > 0) {
+      // Automatically select and load the first loan
       selectedLoanId.value = activeLoans.value[0].id
       await loadLoanDetails()
     } else {
@@ -824,6 +975,16 @@ const formatDate = (date: string) => {
     month: 'short',
     day: 'numeric'
   })
+}
+
+const getDayName = (date: string) => {
+  if (!date) return ''
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+  return days[new Date(date).getDay()]
+}
+
+const getRowClass = (item: any) => {
+  return item.is_weekend ? 'bg-orange-lighten-5' : ''
 }
 
 const getStatusColor = (status: string) => {

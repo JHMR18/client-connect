@@ -495,7 +495,7 @@
 
                       <v-col cols="12" md="4">
                         <v-text-field
-                          :value="loanCalculations.dailyPayment"
+                          :model-value="loanCalculations.dailyPayment.toLocaleString()"
                           label="Daily Payment (₱)"
                           variant="outlined"
                           readonly
@@ -592,6 +592,7 @@
                             (v) => v > 0 || 'Income must be positive',
                           ]"
                           required
+                          @input="calculateNetIncome"
                         />
                       </v-col>
 
@@ -606,12 +607,13 @@
                             (v) => v >= 0 || 'Expenses cannot be negative',
                           ]"
                           required
+                          @input="calculateNetIncome"
                         />
                       </v-col>
 
                       <v-col cols="12" md="4">
                         <v-text-field
-                          :value="netIncome"
+                          :model-value="netIncome.toLocaleString()"
                           label="Net Monthly Income (₱)"
                           variant="outlined"
                           readonly
@@ -795,7 +797,7 @@
                     </v-col>
 
                     <v-col cols="12">
-                      <v-card variant="outlined">
+                      <v-card variant="outlined" class="mb-4">
                         <v-card-title>Application Summary</v-card-title>
                         <v-card-text>
                           <v-row>
@@ -806,16 +808,88 @@
                               <p><strong>Civil Status:</strong> {{ application.civilStatus }}</p>
                             </v-col>
                             <v-col cols="12" md="6">
+                              <h4 class="text-subtitle-1 mb-2">Business Information</h4>
+                              <p><strong>Business Name:</strong> {{ application.businessName }}</p>
+                              <p><strong>Business Type:</strong> {{ application.businessType }}</p>
+                              <p><strong>Years in Business:</strong> {{ application.yearsInBusiness }} years</p>
+                            </v-col>
+                            <v-col cols="12" md="6">
                               <h4 class="text-subtitle-1 mb-2">Loan Details</h4>
+                              <p><strong>Product:</strong> Business Loan</p>
                               <p>
                                 <strong>Amount:</strong> ₱{{
                                   application.loanAmount?.toLocaleString()
                                 }}
                               </p>
-                              <p><strong>Term:</strong> {{ application.termMonths }} months</p>
+                              <p><strong>Term:</strong> {{ application.termDays }} days</p>
                               <p><strong>Purpose:</strong> {{ application.purpose }}</p>
                             </v-col>
+                            <v-col cols="12" md="6">
+                              <h4 class="text-subtitle-1 mb-2">Financial Information</h4>
+                              <p><strong>Monthly Income:</strong> ₱{{ application.monthlyIncome?.toLocaleString() }}</p>
+                              <p><strong>Monthly Expenses:</strong> ₱{{ application.monthlyExpenses?.toLocaleString() }}</p>
+                              <p><strong>Net Monthly Income:</strong> ₱{{ netIncome.toLocaleString() }}</p>
+                            </v-col>
                           </v-row>
+                        </v-card-text>
+                      </v-card>
+                    </v-col>
+
+                    <!-- Loan Breakdown -->
+                    <v-col cols="12" v-if="application.loanAmount > 0">
+                      <v-card variant="outlined" class="mb-4">
+                        <v-card-title>
+                          <v-icon class="me-2" color="error">mdi-cash-multiple</v-icon>
+                          Loan Breakdown
+                        </v-card-title>
+                        <v-card-text>
+                          <v-row dense>
+                            <v-col cols="6" md="3">
+                              <div class="text-caption text-medium-emphasis">Principal Amount</div>
+                              <div class="text-h6">₱{{ application.loanAmount?.toLocaleString() || 0 }}</div>
+                            </v-col>
+                            <v-col cols="6" md="3">
+                              <div class="text-caption text-medium-emphasis">Interest (17%)</div>
+                              <div class="text-h6 text-error">₱{{ loanCalculations.interest.toLocaleString() }}</div>
+                            </v-col>
+                            <v-col cols="6" md="3">
+                              <div class="text-caption text-medium-emphasis">Daily Payment</div>
+                              <div class="text-h6 text-primary">₱{{ loanCalculations.dailyPayment.toLocaleString() }}</div>
+                            </v-col>
+                            <v-col cols="6" md="3">
+                              <div class="text-caption text-medium-emphasis">Payment Period</div>
+                              <div class="text-h6 text-info">{{ loanCalculations.numberOfDays }} days</div>
+                            </v-col>
+                            <v-col cols="6" md="3">
+                              <div class="text-caption text-medium-emphasis">Processing Fee</div>
+                              <div class="text-h6">₱150</div>
+                            </v-col>
+                            <v-col cols="6" md="3">
+                              <div class="text-caption text-medium-emphasis">Doc Stamp</div>
+                              <div class="text-h6">₱45</div>
+                            </v-col>
+                            <v-col cols="6" md="3">
+                              <div class="text-caption text-medium-emphasis">Total Deductions</div>
+                              <div class="text-h6 text-warning">₱{{ loanCalculations.totalDeductions.toLocaleString() }}</div>
+                            </v-col>
+                            <v-col cols="6" md="3">
+                              <div class="text-caption text-medium-emphasis">Net Proceeds</div>
+                              <div class="text-h6 text-success">₱{{ loanCalculations.netProceeds.toLocaleString() }}</div>
+                            </v-col>
+                          </v-row>
+
+                          <v-divider class="my-4" />
+
+                          <v-alert type="info" variant="tonal" density="compact">
+                            <div class="d-flex align-center">
+                              <v-icon class="me-2">mdi-information</v-icon>
+                              <div>
+                                <strong>Daily Payment Plan:</strong> You will pay ₱{{ loanCalculations.dailyPayment.toLocaleString() }}
+                                per day for {{ loanCalculations.numberOfDays }} days. Total amount to be paid:
+                                ₱{{ (loanCalculations.dailyPayment * loanCalculations.numberOfDays).toLocaleString() }}
+                              </div>
+                            </div>
+                          </v-alert>
                         </v-card-text>
                       </v-card>
                     </v-col>
@@ -1059,7 +1133,7 @@ const netIncomeColor = computed(() => {
 const calculateLoanDetails = () => {
   const principal = application.value.loanAmount || 0;
   const termDays = application.value.termDays || 0;
-  
+
   if (principal <= 0 || termDays <= 0) {
     loanCalculations.value = {
       interest: 0,
@@ -1071,20 +1145,20 @@ const calculateLoanDetails = () => {
     };
     return;
   }
-  
+
   // Interest (17% of principal)
   const interest = Math.round(principal * INTEREST_RATE);
-  
+
   // Daily payment & loan discharge depend on selected term (principal divided by days)
   const dailyPayment = Math.round(principal / termDays);
   const loanDischarge = dailyPayment; // same as daily payment
-  
+
   // Total deductions include interest, loan discharge, processing fee & doc stamp
   const totalDeductions = interest + loanDischarge + PROCESSING_FEE + DOC_STAMP;
-  
+
   // Net proceeds (principal minus deductions)
   const netProceeds = principal - totalDeductions;
-  
+
   loanCalculations.value = {
     interest,
     loanDischarge,
@@ -1093,6 +1167,12 @@ const calculateLoanDetails = () => {
     dailyPayment,
     numberOfDays: termDays
   };
+};
+
+// Calculate net income (triggers reactivity through computed property)
+const calculateNetIncome = () => {
+  // This function triggers the computed netIncome property to recalculate
+  // No additional logic needed since netIncome is a computed property
 };
 
 // Recalculate automatically when principal or termDays change

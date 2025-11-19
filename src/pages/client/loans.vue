@@ -162,7 +162,7 @@
         <v-card class="mb-6">
           <v-card-text>
             <v-row>
-              <v-col cols="12" md="4">
+              <v-col cols="12" md="6">
                 <v-select
                   v-model="selectedStatus"
                   :items="statusOptions"
@@ -172,17 +172,7 @@
                   @update:model-value="filterLoans"
                 />
               </v-col>
-              <v-col cols="12" md="4">
-                <v-select
-                  v-model="selectedProduct"
-                  :items="productOptions"
-                  label="Filter by Product"
-                  variant="outlined"
-                  clearable
-                  @update:model-value="filterLoans"
-                />
-              </v-col>
-              <v-col cols="12" md="4">
+              <v-col cols="12" md="6">
                 <v-text-field
                   v-model="searchQuery"
                   label="Search loans..."
@@ -209,7 +199,7 @@
               >
                 <v-card-title class="d-flex justify-space-between align-center">
                   <div>
-                    <h4 class="text-h6">{{ loan.loanProduct }}</h4>
+                    <h4 class="text-h6">Business Loan</h4>
                     <p class="text-caption mb-0 opacity-70">
                       Applied: {{ formatDate(loan.applicationDate) }}
                     </p>
@@ -227,7 +217,7 @@
                     </div>
                     <div class="detail-row">
                       <span class="label">Term:</span>
-                      <span class="value">{{ loan.termMonths }} months</span>
+                      <span class="value">{{ loan.termDays }} days</span>
                     </div>
                     <div class="detail-row">
                       <span class="label">Purpose:</span>
@@ -274,19 +264,19 @@
           <h3 class="text-h5 text-disabled mb-2">No loans found</h3>
           <p class="text-body-1 text-disabled mb-6">
             {{
-              selectedStatus || selectedProduct || searchQuery
+              selectedStatus || searchQuery
                 ? "No loans match your current filters"
                 : "You haven't applied for any loans yet"
             }}
           </p>
           <v-btn
-            v-if="!selectedStatus && !selectedProduct && !searchQuery"
+            v-if="!selectedStatus && !searchQuery"
             color="primary"
             size="large"
             prepend-icon="mdi-plus"
             @click="$router.push('/client/apply')"
           >
-            Apply for Loan
+            Apply for Business Loan
           </v-btn>
           <v-btn v-else color="primary" variant="outlined" @click="clearFilters">
             Clear Filters
@@ -308,7 +298,7 @@
           <div>
             <h3>Loan Details</h3>
             <p class="text-subtitle-2 text-medium-emphasis mb-0">
-              {{ selectedLoan.loanProduct }} - {{ selectedLoan.id }}
+              Business Loan - {{ selectedLoan.id }}
             </p>
           </div>
           <v-chip :color="getStatusColor(selectedLoan.status)" variant="flat">
@@ -328,7 +318,7 @@
                   <div class="detail-grid">
                     <div class="detail-item">
                       <span class="label">Product:</span>
-                      <span class="value">{{ selectedLoan.loanProduct }}</span>
+                      <span class="value">Business Loan</span>
                     </div>
                     <div class="detail-item">
                       <span class="label">Amount:</span>
@@ -338,7 +328,7 @@
                     </div>
                     <div class="detail-item">
                       <span class="label">Term:</span>
-                      <span class="value">{{ selectedLoan.termMonths }} months</span>
+                      <span class="value">{{ selectedLoan.termDays }} days</span>
                     </div>
                     <div class="detail-item">
                       <span class="label">Purpose:</span>
@@ -465,17 +455,16 @@ const { logout } = useAuth();
 const drawer = ref(true);
 const loading = ref(false);
 const showDetails = ref(false);
-const selectedLoan = ref(null);
-const currentUser = ref(null);
+const selectedLoan = ref<any>(null);
+const currentUser = ref<any>(null);
 
 // API composables
 const { getApplications } = useLoanApplications();
 const { getClientStats } = useDashboardStats();
 
 // Data
-const loans = ref([]);
-const selectedStatus = ref(null);
-const selectedProduct = ref(null);
+const loans = ref<any[]>([]);
+const selectedStatus = ref<string | null>(null);
 const searchQuery = ref("");
 
 // Statistics
@@ -494,8 +483,6 @@ const statusOptions = [
   { title: "Restructured", value: "restructured" },
 ];
 
-const productOptions = ref([]);
-
 // Computed
 const filteredLoans = computed(() => {
   let filtered = loans.value;
@@ -504,17 +491,13 @@ const filteredLoans = computed(() => {
     filtered = filtered.filter((loan) => loan.status === selectedStatus.value);
   }
 
-  if (selectedProduct.value) {
-    filtered = filtered.filter((loan) => loan.loanProduct === selectedProduct.value);
-  }
-
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase();
     filtered = filtered.filter(
       (loan) =>
-        loan.loanProduct.toLowerCase().includes(query) ||
         loan.purpose.toLowerCase().includes(query) ||
-        loan.id.toString().includes(query),
+        loan.id.toString().includes(query) ||
+        'business loan'.includes(query),
     );
   }
 
@@ -545,9 +528,8 @@ const getCardClass = (status: string) => {
   return {
     "border-info": status === "pending",
     "border-primary": status === "approved",
-    "border-error": status === "active",
+    "border-error": status === "active" || status === "rejected",
     "border-grey": status === "closed",
-    "border-error": status === "rejected",
     "border-purple": status === "restructured",
   };
 };
@@ -579,7 +561,6 @@ const viewPayments = (loan: any) => {
 
 const clearFilters = () => {
   selectedStatus.value = null;
-  selectedProduct.value = null;
   searchQuery.value = "";
 };
 
@@ -604,18 +585,11 @@ const loadLoans = async () => {
 
     // Transform loans data
     loans.value = userLoans.map((loan) => {
-      // Handle Many-to-Many loan product relationship
-      let loanProductName = "Unknown Product";
-      if (loan.loan_product && loan.loan_product.length > 0) {
-        // loan_product is an array because of M2M relationship
-        loanProductName = loan.loan_product[0]?.loan_products_id?.name || "Unknown Product";
-      }
-
       return {
         id: loan.id,
-        loanProduct: loanProductName,
+        loanProduct: "Business Loan", // Fixed product name
         principalAmount: loan.principal_amount,
-        termMonths: loan.term_months,
+        termDays: loan.term_days, // Updated to use term_days instead of term_months
         purpose: loan.purpose,
         status: loan.status,
         applicationDate: loan.application_date,
@@ -637,13 +611,6 @@ const loadLoans = async () => {
     outstandingAmount.value = loans.value
       .filter((l) => l.status === "active")
       .reduce((sum, l) => sum + (l.principalAmount - l.totalPaid), 0);
-
-    // Get unique product options for filter
-    const uniqueProducts = [...new Set(loans.value.map((l) => l.loanProduct))];
-    productOptions.value = uniqueProducts.map((product) => ({
-      title: product,
-      value: product,
-    }));
   } catch (error) {
     console.error("Error loading loans:", error);
   } finally {
