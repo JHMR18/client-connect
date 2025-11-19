@@ -146,6 +146,10 @@
                     <v-row>
                       <v-col cols="12">
                         <h3 class="text-h6 mb-4">Personal Information</h3>
+                        <v-alert type="info" variant="tonal" density="compact" class="mb-4">
+                          Personal information is automatically populated from your profile and cannot be edited here. 
+                          To update, please visit your <router-link to="/client/profile" class="text-error font-weight-bold">Profile</router-link> page.
+                        </v-alert>
                       </v-col>
 
                       <v-col cols="12" md="4">
@@ -155,6 +159,7 @@
                           variant="outlined"
                           :rules="[(v) => !!v || 'First name is required']"
                           required
+                          readonly
                         />
                       </v-col>
 
@@ -163,6 +168,7 @@
                           v-model="application.middleName"
                           label="Middle Name"
                           variant="outlined"
+                          readonly
                         />
                       </v-col>
 
@@ -173,6 +179,7 @@
                           variant="outlined"
                           :rules="[(v) => !!v || 'Last name is required']"
                           required
+                          readonly
                         />
                       </v-col>
 
@@ -181,6 +188,7 @@
                           v-model="application.nickname"
                           label="Nickname"
                           variant="outlined"
+                          readonly
                         />
                       </v-col>
 
@@ -192,6 +200,7 @@
                           variant="outlined"
                           :rules="[(v) => !!v || 'Date of birth is required']"
                           required
+                          readonly
                         />
                       </v-col>
 
@@ -203,6 +212,7 @@
                           variant="outlined"
                           :rules="[(v) => !!v || 'Gender is required']"
                           required
+                          readonly
                         />
                       </v-col>
 
@@ -214,6 +224,7 @@
                           variant="outlined"
                           :rules="[(v) => !!v || 'Civil status is required']"
                           required
+                          readonly
                         />
                       </v-col>
 
@@ -224,6 +235,7 @@
                           variant="outlined"
                           :rules="[(v) => !!v || 'Citizenship is required']"
                           required
+                          readonly
                         />
                       </v-col>
 
@@ -237,6 +249,7 @@
                               ? [(v) => !!v || 'Spouse name is required']
                               : []
                           "
+                          readonly
                         />
                       </v-col>
 
@@ -251,6 +264,7 @@
                               /^[0-9+\-\s()]+$/.test(v) || 'Please enter a valid mobile number',
                           ]"
                           required
+                          readonly
                         />
                       </v-col>
 
@@ -262,6 +276,7 @@
                           rows="3"
                           :rules="[(v) => !!v || 'Present address is required']"
                           required
+                          readonly
                         />
                       </v-col>
                     </v-row>
@@ -445,78 +460,65 @@
                   <v-form ref="financialForm">
                     <v-row>
                       <v-col cols="12">
-                        <h3 class="text-h6 mb-4">Financial Information</h3>
-                      </v-col>
-
-                      <v-col cols="12" md="6">
-                        <v-select
-                          v-model="application.loanProduct"
-                          :items="loanProducts"
-                          item-title="name"
-                          item-value="id"
-                          label="Loan Product"
-                          variant="outlined"
-                          :rules="[(v) => !!v || 'Loan product is required']"
-                          required
-                          @update:model-value="onLoanProductChange"
-                        />
-                        <v-alert
-                          v-if="selectedProduct"
-                          type="info"
-                          variant="tonal"
-                          density="compact"
-                          class="mt-2"
-                        >
-                          <strong>Interest Rate:</strong> {{ selectedProduct.interest_rate }}% p.a. | 
-                          <strong>Max Term:</strong> {{ selectedProduct.max_term }} months
+                        <h3 class="text-h6 mb-4">Loan Information</h3>
+                        <v-alert type="info" variant="tonal" density="compact" class="mb-4">
+                          Business Loan - Daily Payment Plan
                         </v-alert>
                       </v-col>
 
-                      <v-col cols="12" md="6">
+                      <v-col cols="12" md="4">
                         <v-text-field
                           v-model.number="application.loanAmount"
                           label="Loan Amount (₱)"
                           type="number"
                           variant="outlined"
-                          :hint="selectedProductHints.amount"
+                          :hint="isFirstTimeLoan ? 'First-time borrowers are limited to ₱10,000' : 'Enter desired loan amount'"
                           persistent-hint
                           :rules="[
                             (v) => !!v || 'Loan amount is required',
                             (v) => v > 0 || 'Loan amount must be positive',
-                            (v) =>
-                              !selectedProduct ||
-                              v >= selectedProduct.min_amount ||
-                              `Minimum loan amount is ₱${selectedProduct.min_amount.toLocaleString()}`,
-                            (v) =>
-                              !selectedProduct ||
-                              v <= selectedProduct.max_amount ||
-                              `Maximum loan amount is ₱${selectedProduct.max_amount.toLocaleString()}`,
+                            (v) => !isFirstTimeLoan || v <= 10000 || 'First-time borrowers can only loan up to ₱10,000'
                           ]"
                           required
+                          @input="calculateLoanDetails"
                         />
+                        <v-alert
+                          v-if="isFirstTimeLoan"
+                          type="info"
+                          variant="tonal"
+                          density="compact"
+                          class="mt-2"
+                        >
+                          <strong>First-Time Borrower:</strong> As a first-time borrower, your maximum loan amount is ₱10,000.
+                        </v-alert>
                       </v-col>
 
-                      <v-col cols="12" md="6">
+                      <v-col cols="12" md="4">
                         <v-text-field
-                          v-model.number="application.termMonths"
-                          label="Loan Term (months)"
-                          type="number"
+                          :value="loanCalculations.dailyPayment"
+                          label="Daily Payment (₱)"
                           variant="outlined"
-                          :hint="selectedProductHints.term"
+                          readonly
+                          hint="1% of loan amount"
                           persistent-hint
-                          :rules="[
-                            (v) => !!v || 'Loan term is required',
-                            (v) => v > 0 || 'Term must be positive',
-                            (v) =>
-                              !selectedProduct ||
-                              v <= selectedProduct.max_term ||
-                              `Maximum term is ${selectedProduct.max_term} months`,
-                          ]"
+                        />
+                      </v-col>
+
+                      <v-col cols="12" md="4">
+                        <v-select
+                          v-model="application.termDays"
+                          :items="termDayOptions"
+                          label="Number of Days"
+                          variant="outlined"
+                          hint="Select 50 (Short Term) or 100 (Long Term)"
+                          persistent-hint
+                          @update:model-value="calculateLoanDetails"
+                          :rules="[v => !!v || 'Please select payment period']"
                           required
                         />
                       </v-col>
 
-                      <v-col cols="12" md="6">
+                      <v-col cols="12">
                         <v-text-field
                           v-model="application.purpose"
                           label="Purpose of Loan"
@@ -526,7 +528,56 @@
                         />
                       </v-col>
 
+                      <!-- Loan Breakdown -->
+                      <v-col cols="12" v-if="application.loanAmount > 0">
+                        <v-divider class="my-4" />
+                        <h4 class="text-subtitle-1 mb-4">Loan Breakdown</h4>
+                        <v-card variant="outlined">
+                          <v-card-text>
+                            <v-row dense>
+                              <v-col cols="6" md="3">
+                                <div class="text-caption text-medium-emphasis">Principal Amount</div>
+                                <div class="text-h6">₱{{ application.loanAmount?.toLocaleString() || 0 }}</div>
+                              </v-col>
+                              <v-col cols="6" md="3">
+                                <div class="text-caption text-medium-emphasis">Interest (17%)</div>
+                                <div class="text-h6 text-error">₱{{ loanCalculations.interest.toLocaleString() }}</div>
+                              </v-col>
+                              <v-col cols="6" md="3">
+                                <div class="text-caption text-medium-emphasis">Loan Discharge (Daily)</div>
+                                <div class="text-h6">₱{{ loanCalculations.loanDischarge.toLocaleString() }}</div>
+                              </v-col>
+                              <v-col cols="6" md="3">
+                                <div class="text-caption text-medium-emphasis">Processing Fee</div>
+                                <div class="text-h6">₱150</div>
+                              </v-col>
+                              <v-col cols="6" md="3">
+                                <div class="text-caption text-medium-emphasis">Doc Stamp</div>
+                                <div class="text-h6">₱45</div>
+                              </v-col>
+                              <v-col cols="6" md="3">
+                                <div class="text-caption text-medium-emphasis">Total Deductions</div>
+                                <div class="text-h6 text-warning">₱{{ loanCalculations.totalDeductions.toLocaleString() }}</div>
+                              </v-col>
+                              <v-col cols="6" md="3">
+                                <div class="text-caption text-medium-emphasis">Net Proceeds</div>
+                                <div class="text-h6 text-success">₱{{ loanCalculations.netProceeds.toLocaleString() }}</div>
+                              </v-col>
+                              <v-col cols="6" md="3">
+                                <div class="text-caption text-medium-emphasis">Daily Payment</div>
+                                <div class="text-h6 text-primary">₱{{ loanCalculations.dailyPayment.toLocaleString() }}</div>
+                              </v-col>
+                              <v-col cols="6" md="3">
+                                <div class="text-caption text-medium-emphasis">Payment Period</div>
+                                <div class="text-h6 text-info">{{ loanCalculations.numberOfDays }} days</div>
+                              </v-col>
+                            </v-row>
+                          </v-card-text>
+                        </v-card>
+                      </v-col>
+
                       <v-col cols="12">
+                        <v-divider class="my-4" />
                         <h4 class="text-subtitle-1 mb-3">Monthly Income & Expenses</h4>
                       </v-col>
 
@@ -841,12 +892,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useAuth } from "@/utils/useAuth";
 import {
   useLoanApplications,
-  useLoanProducts,
   useChildren,
   useUserProfile,
 } from "@/utils/useSmartLoanApi";
@@ -861,6 +911,8 @@ const currentStep = ref(1);
 const submitting = ref(false);
 const showTerms = ref(false);
 const currentUser = ref(null);
+const isFirstTimeLoan = ref(true);
+const existingLoans = ref([]);
 
 // Form refs
 const personalForm = ref();
@@ -868,13 +920,26 @@ const businessForm = ref();
 const financialForm = ref();
 
 // API composables
-const { createApplication } = useLoanApplications();
-const { getProducts } = useLoanProducts();
+const { createApplication, getApplications } = useLoanApplications();
 const { createChild } = useChildren();
 const { updateUserProfile, getUserProfile } = useUserProfile();
 
-// Loan products
-const loanProducts = ref([]);
+// Loan constants
+const INTEREST_RATE = 0.17; // 17%
+const LOAN_DISCHARGE_RATE = 0.01; // 1%
+const PROCESSING_FEE = 150;
+const DOC_STAMP = 45;
+const termDayOptions = [50, 100];
+
+// Loan calculations
+const loanCalculations = ref({
+  interest: 0,
+  loanDischarge: 0,
+  totalDeductions: 0,
+  netProceeds: 0,
+  dailyPayment: 0,
+  numberOfDays: 0
+});
 
 // File upload tracking
 const uploadedFiles = ref({
@@ -947,10 +1012,16 @@ const application = ref({
   // Financial Information
   loanProduct: null,
   loanAmount: null,
-  termMonths: null,
   purpose: "",
   monthlyIncome: null,
   monthlyExpenses: null,
+  termDays: null,
+  
+  // Loan calculation fields
+  interestRate: 17,
+  loanDischarge: 1,
+  processingFee: 150,
+  docStamp: 45,
 
   // Requirements
   validId: null,
@@ -984,25 +1055,51 @@ const netIncomeColor = computed(() => {
   return "error";
 });
 
-// Selected loan product
-const selectedProduct = computed(() => {
-  if (!application.value.loanProduct) return null;
-  return loanProducts.value.find((p) => p.id === application.value.loanProduct);
-});
-
-// Product hints
-const selectedProductHints = computed(() => {
-  if (!selectedProduct.value) {
-    return {
-      amount: "Select a loan product first",
-      term: "Select a loan product first",
+// Calculate loan details
+const calculateLoanDetails = () => {
+  const principal = application.value.loanAmount || 0;
+  const termDays = application.value.termDays || 0;
+  
+  if (principal <= 0 || termDays <= 0) {
+    loanCalculations.value = {
+      interest: 0,
+      loanDischarge: 0,
+      totalDeductions: 0,
+      netProceeds: 0,
+      dailyPayment: 0,
+      numberOfDays: termDays
     };
+    return;
   }
-  return {
-    amount: `Min: ₱${selectedProduct.value.min_amount.toLocaleString()} - Max: ₱${selectedProduct.value.max_amount.toLocaleString()} | Interest Rate: ${selectedProduct.value.interest_rate}%`,
-    term: `Maximum ${selectedProduct.value.max_term} months | Interest Rate: ${selectedProduct.value.interest_rate}%`,
+  
+  // Interest (17% of principal)
+  const interest = Math.round(principal * INTEREST_RATE);
+  
+  // Daily payment & loan discharge depend on selected term (principal divided by days)
+  const dailyPayment = Math.round(principal / termDays);
+  const loanDischarge = dailyPayment; // same as daily payment
+  
+  // Total deductions include interest, loan discharge, processing fee & doc stamp
+  const totalDeductions = interest + loanDischarge + PROCESSING_FEE + DOC_STAMP;
+  
+  // Net proceeds (principal minus deductions)
+  const netProceeds = principal - totalDeductions;
+  
+  loanCalculations.value = {
+    interest,
+    loanDischarge,
+    totalDeductions,
+    netProceeds,
+    dailyPayment,
+    numberOfDays: termDays
   };
-});
+};
+
+// Recalculate automatically when principal or termDays change
+watch([
+  () => application.value.loanAmount,
+  () => application.value.termDays
+], calculateLoanDetails, { immediate: true });
 
 // Methods
 // Upload file to Directus
@@ -1072,23 +1169,24 @@ const onFileChange = async (event: Event, fieldName: string) => {
   }
 };
 
-const onLoanProductChange = () => {
-  // Reset loan amount and term if they exceed the new product's limits
-  if (selectedProduct.value) {
-    if (application.value.loanAmount) {
-      if (application.value.loanAmount < selectedProduct.value.min_amount) {
-        application.value.loanAmount = selectedProduct.value.min_amount;
-      }
-      if (application.value.loanAmount > selectedProduct.value.max_amount) {
-        application.value.loanAmount = selectedProduct.value.max_amount;
-      }
-    }
-    if (
-      application.value.termMonths &&
-      application.value.termMonths > selectedProduct.value.max_term
-    ) {
-      application.value.termMonths = selectedProduct.value.max_term;
-    }
+// Check if user has existing loans
+const checkExistingLoans = async (userId: string) => {
+  try {
+    const loans = await getApplications();
+    // Filter loans for current user
+    const userLoans = loans.filter((loan: any) => 
+      loan.client === userId || 
+      (typeof loan.client === 'object' && loan.client?.id === userId)
+    );
+    existingLoans.value = userLoans;
+    isFirstTimeLoan.value = userLoans.length === 0;
+    
+    console.log('Existing loans:', userLoans.length);
+    console.log('Is first time loan:', isFirstTimeLoan.value);
+  } catch (error) {
+    console.error('Error checking existing loans:', error);
+    // Default to first time loan if there's an error
+    isFirstTimeLoan.value = true;
   }
 };
 
@@ -1176,20 +1274,16 @@ const submitApplication = async () => {
     // Prepare loan application data (only loan-specific fields)
     const loanData = {
       client: currentUser.value.id, // Reference to user ID (Many-to-One)
-      // loan_product is a One-to-Many relation, so we need to use create/update/delete format
-      loan_product: {
-        create: [
-          {
-            loan_products_id: parseInt(application.value.loanProduct),
-          }
-        ],
-        update: [],
-        delete: [],
-      },
       principal_amount: parseFloat(application.value.loanAmount),
-      term_months: parseInt(application.value.termMonths),
+      term_days: application.value.termDays || null,
       status: "pending",
       application_date: new Date().toISOString().split("T")[0], // Date only
+      
+      // Loan calculation fields
+      interest_rate: application.value.interestRate,
+      loan_discharge: application.value.loanDischarge,
+      processing_fee: application.value.processingFee,
+      doc_stamp: application.value.docStamp,
 
       // Business Information
       business_name: application.value.businessName || null,
@@ -1330,10 +1424,6 @@ onMounted(async () => {
     // Get current user
     currentUser.value = await getCurrentUser();
 
-    // Load loan products
-    const products = await getProducts();
-    loanProducts.value = products;
-
     // Load existing user profile data to populate form
     if (currentUser.value?.id) {
       const userProfile = await getUserProfile(currentUser.value.id);
@@ -1353,6 +1443,9 @@ onMounted(async () => {
         application.value.presentAddress = userProfile.present_address || "";
         application.value.mobileNumber = userProfile.mobile_number || "";
       }
+
+      // Check if user has existing loans
+      await checkExistingLoans(currentUser.value.id);
     }
   } catch (error) {
     console.error("Error loading initial data:", error);

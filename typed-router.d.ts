@@ -21,6 +21,7 @@ declare module 'vue-router/auto-routes' {
     '/': RouteRecordInfo<'/', '/', Record<never, never>, Record<never, never>>,
     '/[...404]': RouteRecordInfo<'/[...404]', '/:404(.*)', { 404: ParamValue<true> }, { 404: ParamValue<false> }>,
     '/admin/applications': RouteRecordInfo<'/admin/applications', '/admin/applications', Record<never, never>, Record<never, never>>,
+    '/admin/clients': RouteRecordInfo<'/admin/clients', '/admin/clients', Record<never, never>, Record<never, never>>,
     '/admin/dashboard': RouteRecordInfo<'/admin/dashboard', '/admin/dashboard', Record<never, never>, Record<never, never>>,
     '/admin/loan-products': RouteRecordInfo<'/admin/loan-products', '/admin/loan-products', Record<never, never>, Record<never, never>>,
     '/admin/login': RouteRecordInfo<'/admin/login', '/admin/login', Record<never, never>, Record<never, never>>,
@@ -31,6 +32,7 @@ declare module 'vue-router/auto-routes' {
     '/client/login': RouteRecordInfo<'/client/login', '/client/login', Record<never, never>, Record<never, never>>,
     '/client/payments': RouteRecordInfo<'/client/payments', '/client/payments', Record<never, never>, Record<never, never>>,
     '/client/profile': RouteRecordInfo<'/client/profile', '/client/profile', Record<never, never>, Record<never, never>>,
+    '/client/register': RouteRecordInfo<'/client/register', '/client/register', Record<never, never>, Record<never, never>>,
     '/CreateHealthRecord': RouteRecordInfo<'/CreateHealthRecord', '/CreateHealthRecord', Record<never, never>, Record<never, never>>,
   }
 }

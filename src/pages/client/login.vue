@@ -59,6 +59,10 @@
                   </v-btn>
 
                   <div class="text-center">
+                    <v-btn variant="text" color="error" size="small" @click="goToRegister" class="mb-2">
+                      Don't have an account? Sign Up
+                    </v-btn>
+                    <br />
                     <v-btn variant="text" color="error" size="small" @click="goToLandingPage">
                       <v-icon start>mdi-arrow-left</v-icon>
                       Back to Login Options
@@ -141,6 +145,10 @@ const requestLogin = handleLogin;
 
 const goToLandingPage = () => {
   router.push("/");
+};
+
+const goToRegister = () => {
+  router.push("/client/register");
 };
 </script>
 
