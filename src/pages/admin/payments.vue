@@ -18,6 +18,7 @@
           >
             Record Daily Payment
           </v-btn>
+        </div>
 
         <!-- Summary Cards -->
         <v-row class="mb-6">
