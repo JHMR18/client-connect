@@ -67,22 +67,7 @@
             @click="$router.push('/admin/payments')"
           />
 
-          <v-list-group value="products">
-            <template #activator="{ props }">
-              <v-list-item
-                v-bind="props"
-                prepend-icon="mdi-package-variant"
-                title="Loan Products"
-              />
-            </template>
-            <v-list-item
-              title="Manage Products"
-              prepend-icon="mdi-cog"
-              :active="$route.path === '/admin/loan-products'"
-              @click="$router.push('/admin/loan-products')"
-            />
-          </v-list-group>
-
+  
           <v-list-group value="reports">
             <template #activator="{ props }">
               <v-list-item v-bind="props" prepend-icon="mdi-chart-box" title="Reports" />

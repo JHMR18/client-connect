@@ -352,23 +352,6 @@
                   {{ item.status }}
                 </v-chip>
               </template>
-
-              <!-- Actions -->
-              <template #item.actions="{ item }">
-                <v-btn
-                  v-if="item.status === 'upcoming' || item.status === 'overdue'"
-                  color="error"
-                  size="small"
-                  variant="tonal"
-                  @click="openPaymentDialog(item)"
-                >
-                  Pay Daily
-                </v-btn>
-                <v-chip v-else color="success" size="small" variant="flat">
-                  <v-icon start size="small">mdi-check</v-icon>
-                  Paid
-                </v-chip>
-              </template>
             </v-data-table>
           </v-card-text>
         </v-card>
@@ -431,76 +414,6 @@
         </v-card>
       </v-container>
     </v-main>
-
-    <!-- Payment Dialog -->
-    <v-dialog v-model="showPaymentDialog" max-width="600" persistent>
-      <v-card>
-        <v-card-title>Make Payment</v-card-title>
-
-        <v-form ref="paymentForm" @submit.prevent="submitPayment">
-          <v-card-text>
-            <v-alert type="info" variant="tonal" class="mb-4">
-              <div class="d-flex justify-space-between align-center">
-                <span>Amount Due:</span>
-                <strong>₱{{ selectedSchedule?.amount_due?.toLocaleString() }}</strong>
-              </div>
-              <div class="d-flex justify-space-between align-center mt-2">
-                <span>Due Date:</span>
-                <strong>{{ formatDate(selectedSchedule?.due_date) }}</strong>
-              </div>
-            </v-alert>
-
-            <v-row>
-              <v-col cols="12">
-                <v-text-field
-                  v-model.number="paymentData.amount_paid"
-                  label="Payment Amount (₱)"
-                  type="number"
-                  variant="outlined"
-                  prepend-inner-icon="mdi-cash"
-                  :hint="`Amount due: ₱${selectedSchedule?.amount_due?.toLocaleString() || 0}. You can pay more or less.`"
-                  persistent-hint
-                  :rules="[
-                    v => !!v || 'Payment amount is required',
-                    v => v > 0 || 'Amount must be greater than 0'
-                  ]"
-                  required
-                />
-              </v-col>
-
-              <v-col cols="12">
-                <v-select
-                  v-model="paymentData.payment_method"
-                  :items="paymentMethods"
-                  label="Payment Method"
-                  variant="outlined"
-                  prepend-inner-icon="mdi-credit-card"
-                  :rules="[v => !!v || 'Payment method is required']"
-                  required
-                />
-              </v-col>
-
-              <v-col cols="12">
-                <v-text-field
-                  v-model="paymentData.receipt_number"
-                  label="Receipt/Reference Number (Optional)"
-                  variant="outlined"
-                  prepend-inner-icon="mdi-receipt"
-                />
-              </v-col>
-            </v-row>
-          </v-card-text>
-
-          <v-card-actions>
-            <v-spacer />
-            <v-btn @click="closePaymentDialog">Cancel</v-btn>
-            <v-btn type="submit" color="error" :loading="submittingPayment">
-              Submit Payment
-            </v-btn>
-          </v-card-actions>
-        </v-form>
-      </v-card>
-    </v-dialog>
   </v-app>
 </template>
 
@@ -518,33 +431,20 @@ const drawer = ref(true)
 const loadingLoans = ref(false)
 const loadingSchedule = ref(false)
 const loadingPayments = ref(false)
-const submittingPayment = ref(false)
-const showPaymentDialog = ref(false)
-const paymentForm = ref()
 
 const selectedLoanId = ref<string | null>(null)
 const selectedLoan = ref<any>(null)
 const activeLoans = ref<any[]>([])
 const amortizationSchedule = ref<any[]>([])
 const paymentHistory = ref<any[]>([])
-const selectedSchedule = ref<any>(null)
 const currentUser = ref<any>(null)
-
-const paymentData = ref({
-  amount_paid: null as number | null,
-  payment_method: 'cash',
-  receipt_number: ''
-})
-
-const paymentMethods = ['cash', 'bank_transfer', 'gcash']
 
 const scheduleHeaders = [
   { title: 'Day #', key: 'period', sortable: false },
   { title: 'Date', key: 'due_date' },
   { title: 'Daily Payment', key: 'amount_due' },
   { title: 'Amount Paid', key: 'amount_paid' },
-  { title: 'Status', key: 'status' },
-  { title: 'Actions', key: 'actions', sortable: false }
+  { title: 'Status', key: 'status' }
 ]
 
 const paymentHeaders = [
@@ -820,150 +720,6 @@ const loadLoanDetails = async () => {
   } finally {
     loadingSchedule.value = false
     loadingPayments.value = false
-  }
-}
-
-// Open payment dialog
-const openPaymentDialog = (schedule: any) => {
-  selectedSchedule.value = schedule
-  paymentData.value = {
-    amount_paid: schedule.amount_due,
-    payment_method: 'cash',
-    receipt_number: ''
-  }
-  showPaymentDialog.value = true
-}
-
-// Close payment dialog
-const closePaymentDialog = () => {
-  showPaymentDialog.value = false
-  selectedSchedule.value = null
-  paymentData.value = {
-    amount_paid: null,
-    payment_method: 'cash',
-    receipt_number: ''
-  }
-}
-
-// Submit payment
-const submitPayment = async () => {
-  const form = paymentForm.value
-  if (!form) return
-  
-  const { valid } = await form.validate()
-  if (!valid) return
-  
-  submittingPayment.value = true
-  
-  try {
-    const amountPaid = paymentData.value.amount_paid || 0
-    const amountDue = selectedSchedule.value.amount_due || 0
-    
-    console.log(`Processing payment: Paid=${amountPaid}, Due=${amountDue}`)
-    
-    // Calculate remaining balance
-    const newBalance = remainingBalance.value - amountPaid
-    
-    // Create payment record
-    const payment = await client.request(
-      createItem('payments', {
-        loan: selectedLoanId.value,
-        payment_date: new Date().toISOString().split('T')[0],
-        amount_paid: amountPaid,
-        remaining_balance: newBalance,
-        payment_method: paymentData.value.payment_method,
-        receipt_number: paymentData.value.receipt_number || `RCP-${Date.now()}`
-      })
-    )
-    
-    // Handle payment application to schedule
-    if (amountPaid >= amountDue) {
-      // Full payment or overpayment
-      console.log('✅ Full payment or overpayment')
-      
-      // Mark current schedule as paid
-      await client.request(
-        updateItem('amortization_schedule', selectedSchedule.value.id, {
-          status: 'paid',
-          amount_paid: amountDue
-        })
-      )
-      
-      // Handle overpayment - apply to next unpaid schedules
-      let remainingPayment = amountPaid - amountDue
-      console.log(`Overpayment: ₱${remainingPayment}`)
-      
-      if (remainingPayment > 0) {
-        // Get all unpaid schedules sorted by due date
-        const unpaidSchedules = amortizationSchedule.value
-          .filter((s: any) => s.status === 'upcoming' || s.status === 'overdue')
-          .filter((s: any) => s.id !== selectedSchedule.value.id)
-          .sort((a: any, b: any) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
-        
-        console.log(`Applying overpayment to ${unpaidSchedules.length} unpaid schedules`)
-        
-        for (const schedule of unpaidSchedules) {
-          if (remainingPayment <= 0) break
-          
-          const scheduleDue = schedule.amount_due || 0
-          
-          if (remainingPayment >= scheduleDue) {
-            // Can pay this schedule in full
-            console.log(`✅ Paying schedule ${schedule.id} in full: ₱${scheduleDue}`)
-            await client.request(
-              updateItem('amortization_schedule', schedule.id, {
-                status: 'paid',
-                amount_paid: scheduleDue
-              })
-            )
-            remainingPayment -= scheduleDue
-          } else {
-            // Partial payment on this schedule
-            console.log(`⚠️ Partial payment on schedule ${schedule.id}: ₱${remainingPayment} of ₱${scheduleDue}`)
-            const newAmountDue = scheduleDue - remainingPayment
-            await client.request(
-              updateItem('amortization_schedule', schedule.id, {
-                amount_due: newAmountDue,
-                amount_paid: remainingPayment
-              })
-            )
-            remainingPayment = 0
-          }
-        }
-        
-        if (remainingPayment > 0) {
-          console.log(`ℹ️ Excess payment: ₱${remainingPayment} (all schedules paid)`)
-          alert(`Payment successful! You have an excess of ₱${remainingPayment.toLocaleString()} which can be applied to future payments or refunded.`)
-        } else {
-          alert('Payment submitted successfully!')
-        }
-      } else {
-        alert('Payment submitted successfully!')
-      }
-    } else {
-      // Partial payment (less than amount due)
-      console.log('⚠️ Partial payment')
-      
-      const newAmountDue = amountDue - amountPaid
-      console.log(`Updating schedule ${selectedSchedule.value.id}: New amount due = ₱${newAmountDue}`)
-      
-      await client.request(
-        updateItem('amortization_schedule', selectedSchedule.value.id, {
-          amount_due: newAmountDue,
-          amount_paid: amountPaid
-        })
-      )
-      
-      alert(`Partial payment of ₱${amountPaid.toLocaleString()} recorded. Remaining for this period: ₱${newAmountDue.toLocaleString()}`)
-    }
-    
-    closePaymentDialog()
-    await loadLoanDetails()
-  } catch (error) {
-    console.error('Error submitting payment:', error)
-    alert('Error submitting payment. Please try again.')
-  } finally {
-    submittingPayment.value = false
   }
 }
 
