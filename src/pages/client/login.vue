@@ -128,8 +128,8 @@ const handleLogin = async () => {
     // Attempt login
     await login(email.value, password.value);
 
-    // Navigate to client dashboard
-    await router.push("/client/dashboard");
+    // Navigate to client payments page
+    await router.push("/client/payments");
   } catch (error: any) {
     console.error("Login error:", error);
     errorMessage.value =

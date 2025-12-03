@@ -8,6 +8,8 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    LoanStatusChart: typeof import('./src/components/charts/LoanStatusChart.vue')['default']
+    PaymentHistoryChart: typeof import('./src/components/charts/PaymentHistoryChart.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
   }

@@ -327,9 +327,14 @@ export const useLoanProducts = () => {
 
 // Payments API
 export const usePayments = () => {
-  const getPayments = async (loanId?: string) => {
+  const getPayments = async (loanId?: string, clientId?: string) => {
     try {
-      const filters = loanId ? { loan_id: { _eq: loanId } } : undefined;
+      let filters = undefined;
+      if (loanId) {
+        filters = { loan: { _eq: loanId } };
+      } else if (clientId) {
+        filters = { loan: { client: { _eq: clientId } } };
+      }
       return await client.request(
         readItems("payments", {
           fields: ["*", "loan.*"],
@@ -552,7 +557,7 @@ export const useDashboardStats = () => {
       const [loans, payments] = await Promise.all([
         client.request(
           readItems("loan", {
-            filter: { client_id: { _eq: clientId } },
+            filter: { client: { _eq: clientId } },
             aggregate: {
               count: "*",
               sum: "principal_amount",
@@ -561,8 +566,8 @@ export const useDashboardStats = () => {
         ),
         client.request(
           readItems("payments", {
-            fields: ["*", "loan.client_id"],
-            filter: { "loan.client_id": { _eq: clientId } },
+            fields: ["*", "loan.*"],
+            filter: { loan: { client: { _eq: clientId } } },
           }),
         ),
       ]);

@@ -23,13 +23,6 @@
 
         <v-list nav density="compact">
           <v-list-item
-            prepend-icon="mdi-view-dashboard"
-            title="Dashboard"
-            value="dashboard"
-            :active="$route.path === '/client/dashboard'"
-            @click="$router.push('/client/dashboard')"
-          />
-          <v-list-item
             prepend-icon="mdi-file-document-plus"
             title="Apply for Loan"
             value="apply"
@@ -155,87 +148,244 @@
           </v-col>
         </v-row>
 
-        <!-- Recent Activity & Quick Actions -->
+        <!-- Data Visualization Dashboard -->
         <v-row>
           <v-col cols="12" lg="8">
-            <v-card>
-              <v-card-title class="d-flex align-center">
-                <v-icon class="me-2">mdi-history</v-icon>
-                Recent Activity
-              </v-card-title>
-              <v-divider />
-              <v-card-text>
-                <v-list>
-                  <v-list-item
-                    v-for="activity in recentActivity"
-                    :key="activity.id"
-                    class="px-0"
-                  >
-                    <template #prepend>
-                      <v-avatar :color="activity.color" size="40">
-                        <v-icon color="white">{{ activity.icon }}</v-icon>
-                      </v-avatar>
-                    </template>
-
-                    <v-list-item-title>{{ activity.title }}</v-list-item-title>
-                    <v-list-item-subtitle>{{ activity.description }}</v-list-item-subtitle>
-
-                    <template #append>
-                      <div class="text-caption text-medium-emphasis">
-                        {{ activity.date }}
+            <v-row>
+              <!-- Payment History Chart -->
+              <v-col cols="12">
+                <v-card>
+                  <v-card-title class="d-flex align-center">
+                    <v-icon class="me-2">mdi-chart-line</v-icon>
+                    Payment History & Trends
+                  </v-card-title>
+                  <v-divider />
+                  <v-card-text>
+                    <div style="height: 300px;">
+                      <PaymentHistoryChart v-if="chartData" :data="chartData" />
+                      <div v-else class="d-flex align-center justify-center h-100">
+                        <v-progress-circular indeterminate color="primary"></v-progress-circular>
                       </div>
-                    </template>
-                  </v-list-item>
-                </v-list>
+                    </div>
+                  </v-card-text>
+                </v-card>
+              </v-col>
 
-                <div v-if="recentActivity.length === 0" class="text-center py-8">
-                  <v-icon size="64" class="text-disabled mb-4">mdi-history</v-icon>
-                  <p class="text-h6 text-disabled">No recent activity</p>
-                </div>
-              </v-card-text>
-            </v-card>
+              <!-- Loan Status Distribution & Outstanding Balance -->
+              <v-col cols="12" md="6">
+                <v-card>
+                  <v-card-title class="d-flex align-center">
+                    <v-icon class="me-2">mdi-chart-pie</v-icon>
+                    Loan Status Overview
+                  </v-card-title>
+                  <v-divider />
+                  <v-card-text>
+                    <div style="height: 250px;">
+                      <LoanStatusChart v-if="loanStatusData" :data="loanStatusData" />
+                      <div v-else class="d-flex align-center justify-center h-100">
+                        <v-progress-circular indeterminate color="primary"></v-progress-circular>
+                      </div>
+                    </div>
+                  </v-card-text>
+                </v-card>
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <v-card>
+                  <v-card-title class="d-flex align-center">
+                    <v-icon class="me-2">mdi-progress-clock</v-icon>
+                    Outstanding Balances
+                  </v-card-title>
+                  <v-divider />
+                  <v-card-text>
+                    <div v-if="loanProgress.length > 0" class="py-2">
+                      <div
+                        v-for="loan in loanProgress"
+                        :key="loan.id"
+                        class="mb-4"
+                      >
+                        <div class="d-flex justify-space-between align-center mb-2">
+                          <span class="text-subtitle-2">{{ loan.business_name || 'Loan #' + loan.id.slice(-6) }}</span>
+                          <span class="text-caption text-medium-emphasis">₱{{ formatNumber(loan.remaining_balance) }}</span>
+                        </div>
+                        <v-progress-linear
+                          :model-value="loan.progress_percentage"
+                          :color="getProgressColor(loan.progress_percentage)"
+                          height="8"
+                          rounded
+                        >
+                          <template #default="{ value }">
+                            <strong>{{ Math.ceil(value) }}%</strong>
+                          </template>
+                        </v-progress-linear>
+                        <div class="text-caption text-medium-emphasis mt-1">
+                          ₱{{ formatNumber(loan.total_paid) }} paid of ₱{{ formatNumber(loan.principal_amount) }}
+                        </div>
+                      </div>
+                    </div>
+                    <div v-else class="text-center py-8">
+                      <v-icon size="48" class="text-disabled mb-2">mdi-progress-clock</v-icon>
+                      <p class="text-body-2 text-disabled">No active loans</p>
+                    </div>
+                  </v-card-text>
+                </v-card>
+              </v-col>
+            </v-row>
           </v-col>
 
           <v-col cols="12" lg="4">
-            <v-card>
-              <v-card-title class="d-flex align-center">
-                <v-icon class="me-2">mdi-lightning-bolt</v-icon>
-                Quick Actions
-              </v-card-title>
-              <v-divider />
-              <v-card-text>
-                <v-list>
-                  <v-list-item
-                    prepend-icon="mdi-file-document-plus"
-                    title="Apply for New Loan"
-                    subtitle="Start a new loan application"
-                    @click="$router.push('/client/apply')"
-                    class="quick-action-item"
-                  />
-                  <v-list-item
-                    prepend-icon="mdi-credit-card"
-                    title="Make Payment"
-                    subtitle="Pay your loan installment"
-                    @click="$router.push('/client/payments')"
-                    class="quick-action-item"
-                  />
-                  <v-list-item
-                    prepend-icon="mdi-file-document-multiple"
-                    title="View My Loans"
-                    subtitle="Check loan status and details"
-                    @click="$router.push('/client/loans')"
-                    class="quick-action-item"
-                  />
-                  <v-list-item
-                    prepend-icon="mdi-account-edit"
-                    title="Update Profile"
-                    subtitle="Manage your personal information"
-                    @click="$router.push('/client/profile')"
-                    class="quick-action-item"
-                  />
-                </v-list>
-              </v-card-text>
-            </v-card>
+            <v-row>
+              <!-- Payment Completion Rate -->
+              <v-col cols="12">
+                <v-card>
+                  <v-card-title class="d-flex align-center">
+                    <v-icon class="me-2">mdi-chart-donut</v-icon>
+                    Payment Performance
+                  </v-card-title>
+                  <v-divider />
+                  <v-card-text>
+                    <div class="text-center py-4">
+                      <div style="position: relative; display: inline-block;">
+                        <v-progress-circular
+                          :model-value="paymentCompletionRate"
+                          :size="120"
+                          :width="12"
+                          color="success"
+                          class="progress-ring"
+                        >
+                          <div class="text-center">
+                            <div class="text-h4 font-weight-bold">{{ paymentCompletionRate }}%</div>
+                            <div class="text-caption text-medium-emphasis">Complete</div>
+                          </div>
+                        </v-progress-circular>
+                      </div>
+                      <div class="mt-4">
+                        <div class="text-subtitle-2">Payment Summary</div>
+                        <div class="text-body-2 text-medium-emphasis">
+                          {{ onTimePayments }} on-time payments
+                        </div>
+                        <div class="text-body-2 text-medium-emphasis">
+                          {{ totalPayments }} total payments
+                        </div>
+                      </div>
+                    </div>
+                  </v-card-text>
+                </v-card>
+              </v-col>
+
+              <!-- Upcoming Payments -->
+              <v-col cols="12">
+                <v-card>
+                  <v-card-title class="d-flex align-center">
+                    <v-icon class="me-2">mdi-calendar-clock</v-icon>
+                    Upcoming Payments
+                  </v-card-title>
+                  <v-divider />
+                  <v-card-text>
+                    <div v-if="upcomingPayments.length > 0">
+                      <v-list density="compact">
+                        <v-list-item
+                          v-for="payment in upcomingPayments.slice(0, 5)"
+                          :key="payment.id"
+                          class="px-0"
+                        >
+                          <template #prepend>
+                            <v-icon
+                              :color="getUrgencyColor(payment)"
+                              size="20"
+                            >
+                              mdi-calendar
+                            </v-icon>
+                          </template>
+                          <v-list-item-title class="text-body-2">
+                            {{ formatDate(payment.due_date) }}
+                          </v-list-item-title>
+                          <v-list-item-subtitle>
+                            ₱{{ formatNumber(payment.amount_due) }}
+                          </v-list-item-subtitle>
+                          <template #append>
+                            <v-chip
+                              :color="getUrgencyColor(payment)"
+                              size="x-small"
+                              variant="elevated"
+                            >
+                              {{ getDaysUntilDue(payment.due_date) }} days
+                            </v-chip>
+                          </template>
+                        </v-list-item>
+                      </v-list>
+                    </div>
+                    <div v-else class="text-center py-6">
+                      <v-icon size="40" class="text-disabled mb-2">mdi-calendar-check</v-icon>
+                      <p class="text-body-2 text-disabled">No upcoming payments</p>
+                    </div>
+                  </v-card-text>
+                </v-card>
+              </v-col>
+
+              <!-- Quick Actions -->
+              <v-col cols="12">
+                <v-card>
+                  <v-card-title class="d-flex align-center">
+                    <v-icon class="me-2">mdi-lightning-bolt</v-icon>
+                    Quick Actions
+                  </v-card-title>
+                  <v-divider />
+                  <v-card-text class="pa-2">
+                    <v-row dense>
+                      <v-col cols="6">
+                        <v-btn
+                          variant="outlined"
+                          block
+                          height="60"
+                          class="d-flex flex-column"
+                          @click="$router.push('/client/apply')"
+                        >
+                          <v-icon size="20" class="mb-1">mdi-file-document-plus</v-icon>
+                          <span class="text-caption">New Loan</span>
+                        </v-btn>
+                      </v-col>
+                      <v-col cols="6">
+                        <v-btn
+                          variant="outlined"
+                          block
+                          height="60"
+                          class="d-flex flex-column"
+                          @click="$router.push('/client/payments')"
+                        >
+                          <v-icon size="20" class="mb-1">mdi-credit-card</v-icon>
+                          <span class="text-caption">Pay Now</span>
+                        </v-btn>
+                      </v-col>
+                      <v-col cols="6">
+                        <v-btn
+                          variant="outlined"
+                          block
+                          height="60"
+                          class="d-flex flex-column"
+                          @click="$router.push('/client/loans')"
+                        >
+                          <v-icon size="20" class="mb-1">mdi-file-document-multiple</v-icon>
+                          <span class="text-caption">My Loans</span>
+                        </v-btn>
+                      </v-col>
+                      <v-col cols="6">
+                        <v-btn
+                          variant="outlined"
+                          block
+                          height="60"
+                          class="d-flex flex-column"
+                          @click="$router.push('/client/profile')"
+                        >
+                          <v-icon size="20" class="mb-1">mdi-account-edit</v-icon>
+                          <span class="text-caption">Profile</span>
+                        </v-btn>
+                      </v-col>
+                    </v-row>
+                  </v-card-text>
+                </v-card>
+              </v-col>
+            </v-row>
           </v-col>
         </v-row>
       </v-container>
@@ -244,57 +394,215 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/utils/useAuth'
+import { useDashboardStats, useLoanApplications, usePayments } from '@/utils/useSmartLoanApi'
+import PaymentHistoryChart from '@/components/charts/PaymentHistoryChart.vue'
+import LoanStatusChart from '@/components/charts/LoanStatusChart.vue'
+
+// Types for the dashboard data
+interface LoanProgress {
+  id: string
+  business_name?: string
+  remaining_balance: number
+  progress_percentage: number
+  total_paid: number
+  principal_amount: number
+}
+
+interface UpcomingPayment {
+  id: string
+  due_date: string
+  amount_due: number
+  daysUntilDue: number
+}
+
+interface PaymentHistoryChart {
+  labels: string[]
+  datasets: Array<{
+    label: string
+    data: number[]
+    borderColor: string
+    backgroundColor: string
+    tension: number
+    fill: boolean
+  }>
+}
+
+interface LoanStatusChart {
+  labels: string[]
+  datasets: Array<{
+    data: number[]
+    backgroundColor: string[]
+    borderColor: string[]
+    borderWidth: number
+  }>
+}
 
 const router = useRouter()
 const { logout } = useAuth()
+const { getClientStats } = useDashboardStats()
+const { getApplications } = useLoanApplications()
+const { getPayments } = usePayments()
+const { generateSchedule } = useAmortizationSchedule()
 
 const drawer = ref(true)
+const loading = ref(true)
 
-// Dashboard data
-const totalLoans = ref(2)
-const totalBalance = ref(125000)
-const pendingApplications = ref(1)
-const upcomingPayments = ref(3)
+// Reactive data for charts
+const chartData = ref<PaymentHistoryChart | null>(null)
+const loanStatusData = ref<LoanStatusChart | null>(null)
+const loanProgress = ref<LoanProgress[]>([])
+const upcomingPayments = ref<UpcomingPayment[]>([])
+const totalLoans = ref(0)
+const totalBalance = ref(0)
+const pendingApplications = ref(0)
+const paymentCompletionRate = ref(0)
+const onTimePayments = ref(0)
+const totalPayments = ref(0)
 
-const recentActivity = ref([
-  {
-    id: 1,
-    title: 'Payment Received',
-    description: 'Monthly payment of ₱5,000 for Business Loan',
-    date: '2 days ago',
-    icon: 'mdi-check-circle',
-    color: 'success'
-  },
-  {
-    id: 2,
-    title: 'Application Submitted',
-    description: 'New loan application for ₱50,000',
-    date: '1 week ago',
-    icon: 'mdi-file-document-plus',
-    color: 'primary'
-  },
-  {
-    id: 3,
-    title: 'Document Uploaded',
-    description: 'Valid ID and business permit uploaded',
-    date: '1 week ago',
-    icon: 'mdi-cloud-upload',
-    color: 'info'
+// Computed properties
+const hasChartData = computed(() => chartData.value || loanStatusData.value)
+
+// Load dashboard data
+const loadDashboardData = async () => {
+  try {
+    loading.value = true
+
+    // Get client statistics
+    const userId = 'current-user-id' // This would come from auth
+    const stats = await getClientStats(userId)
+
+    // Update reactive data
+    totalLoans.value = stats.totalLoans || 0
+    totalBalance.value = stats.totalBorrowed || 0
+    pendingApplications.value = stats.pendingApplications || 0
+
+    // Get loan applications for charts
+    const applications = await getApplications({
+      client: { _eq: userId }
+    })
+
+    // Prepare chart data - get payments for this client
+    const paymentHistory = await getPayments(undefined, userId)
+
+    // Payment history chart data
+    chartData.value = {
+      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+      datasets: [{
+        label: 'Monthly Payments',
+        data: [5000, 7500, 6000, 8000, 5500, 7000],
+        borderColor: '#4CAF50',
+        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+        tension: 0.4,
+        fill: true
+      }]
+    }
+
+    // Loan status distribution
+    const statusCounts = applications.reduce((acc, loan: any) => {
+      acc[loan.status] = (acc[loan.status] || 0) + 1
+      return acc
+    }, {} as Record<string, number>)
+
+    loanStatusData.value = {
+      labels: Object.keys(statusCounts),
+      datasets: [{
+        data: Object.values(statusCounts),
+        backgroundColor: ['#4CAF50', '#FF9800', '#F44336', '#2196F3'],
+        borderColor: ['#fff'],
+        borderWidth: 2
+      }]
+    }
+
+    // Loan progress data
+    loanProgress.value = applications.map((loan: any) => ({
+      ...loan,
+      progress_percentage: calculateProgress(loan)
+    }))
+
+    // Upcoming payments data
+    upcomingPayments.value = paymentHistory.slice(0, 5).map((payment: any) => ({
+      ...payment,
+      daysUntilDue: calculateDaysUntilDue(payment.due_date)
+    }))
+
+    // Payment performance metrics
+    const completedPayments = paymentHistory.filter((p: any) => p.status === 'completed')
+    totalPayments.value = paymentHistory.length
+    onTimePayments.value = completedPayments.filter((p: any) => isOnTime(p)).length
+    paymentCompletionRate.value = totalPayments.value > 0
+      ? Math.round((onTimePayments.value / totalPayments.value) * 100)
+      : 0
+
+  } catch (error) {
+    console.error('Error loading dashboard data:', error)
+  } finally {
+    loading.value = false
   }
-])
+}
+
+// Helper functions
+const calculateProgress = (loan: any): number => {
+  if (!loan.total_amount || !loan.amount_paid) return 0
+  return Math.round((loan.amount_paid / loan.total_amount) * 100)
+}
+
+const calculateDaysUntilDue = (dueDate: string): number => {
+  const today = new Date()
+  const due = new Date(dueDate)
+  const diffTime = due.getTime() - today.getTime()
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+}
+
+const isOnTime = (payment: any): boolean => {
+  return new Date(payment.paid_date) <= new Date(payment.due_date)
+}
+
+const getProgressColor = (percentage: number): string => {
+  if (percentage >= 80) return 'success'
+  if (percentage >= 50) return 'warning'
+  return 'error'
+}
+
+const getUrgencyColor = (payment: UpcomingPayment): string => {
+  const days = payment.daysUntilDue
+  if (days <= 0) return 'error'
+  if (days <= 3) return 'warning'
+  return 'success'
+}
+
+const formatDate = (date: string): string => {
+  return new Date(date).toLocaleDateString('en-PH', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric'
+  })
+}
+
+const formatNumber = (num: number): string => {
+  return new Intl.NumberFormat('en-PH', {
+    style: 'currency',
+    currency: 'PHP',
+    minimumFractionDigits: 2
+  }).format(num)
+}
+
+// Helper function for template access
+const getDaysUntilDue = (dueDate: string): number => {
+  return calculateDaysUntilDue(dueDate)
+}
+
+// Load data on mount
+onMounted(() => {
+  loadDashboardData()
+})
 
 const handleLogout = async () => {
   await logout()
   router.push('/')
 }
-
-onMounted(async () => {
-  // Load dashboard data from API
-  // This would be replaced with actual API calls
-})
 </script>
 
 <style scoped>
@@ -409,5 +717,48 @@ onMounted(async () => {
 
 :deep(.v-navigation-drawer ::-webkit-scrollbar-thumb:hover) {
   background: rgba(220, 38, 38, 0.5);
+}
+
+/* Chart container styling */
+:deep(.v-card-text .chart-container) {
+  height: 280px !important;
+}
+
+/* Progress ring styling */
+.progress-ring :deep(.v-progress-circular__overlay) {
+  transition: stroke-dashoffset 0.5s ease;
+}
+
+/* Quick action buttons styling */
+:deep(.v-btn.v-btn--outlined) {
+  border: 1px solid rgba(220, 38, 38, 0.3);
+  transition: all 0.2s ease;
+}
+
+:deep(.v-btn.v-btn--outlined:hover) {
+  background-color: rgba(220, 38, 38, 0.05);
+  border-color: rgba(220, 38, 38, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(220, 38, 38, 0.1);
+}
+
+/* Urgency color styling */
+:deep(.v-chip.v-chip--size-x-small) {
+  font-weight: 600;
+  font-size: 10px;
+}
+
+/* Loading states */
+:deep(.v-progress-circular) {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

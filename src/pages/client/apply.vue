@@ -16,13 +16,6 @@
 
         <v-list nav density="compact">
           <v-list-item
-            prepend-icon="mdi-view-dashboard"
-            title="Dashboard"
-            value="dashboard"
-            :active="$route.path === '/client/dashboard'"
-            @click="$router.push('/client/dashboard')"
-          />
-          <v-list-item
             prepend-icon="mdi-file-document-plus"
             title="Apply for Loan"
             value="apply"
@@ -472,12 +465,12 @@
                           label="Loan Amount (₱)"
                           type="number"
                           variant="outlined"
-                          :hint="isFirstTimeLoan ? 'First-time borrowers are limited to ₱10,000' : 'Enter desired loan amount'"
+                          :hint="isFirstTimeLoan ? 'First-time borrowers are limited to ₱10,000' : 'Existing borrowers can apply up to ₱100,000'"
                           persistent-hint
                           :rules="[
                             (v) => !!v || 'Loan amount is required',
                             (v) => v > 0 || 'Loan amount must be positive',
-                            (v) => !isFirstTimeLoan || v <= 10000 || 'First-time borrowers can only loan up to ₱10,000'
+                            (v) => isFirstTimeLoan ? v <= 10000 || 'First-time borrowers can only loan up to ₱10,000' : v <= 100000 || 'Maximum loan amount is ₱100,000'
                           ]"
                           required
                           @input="calculateLoanDetails"
@@ -490,6 +483,15 @@
                           class="mt-2"
                         >
                           <strong>First-Time Borrower:</strong> As a first-time borrower, your maximum loan amount is ₱10,000.
+                        </v-alert>
+                        <v-alert
+                          v-if="!isFirstTimeLoan"
+                          type="success"
+                          variant="tonal"
+                          density="compact"
+                          class="mt-2"
+                        >
+                          <strong>Returning Borrower:</strong> You can apply up to ₱100,000.
                         </v-alert>
                       </v-col>
 
