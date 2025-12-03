@@ -40,8 +40,8 @@
             <v-list-item
               title="Active Loans"
               prepend-icon="mdi-file-document-check"
-              :active="$route.path === '/admin/loans'"
-              @click="$router.push('/admin/loans')"
+              :active="$route.path === '/admin/active-loans'"
+              @click="$router.push('/admin/active-loans')"
             />
             <v-list-item
               title="Risk Assessment"

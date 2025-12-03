@@ -20,56 +20,7 @@
           </v-btn>
         </div>
 
-        <!-- Summary Cards -->
-        <v-row class="mb-6">
-          <v-col cols="12" sm="6" lg="3">
-            <v-card class="stat-card" color="error" variant="flat">
-              <v-card-text class="d-flex align-center">
-                <div class="flex-grow-1">
-                  <div class="text-h4 font-weight-bold text-white">₱{{ totalCollectedToday.toLocaleString() }}</div>
-                  <div class="text-subtitle-2 text-white opacity-80">Today's Collections</div>
-                </div>
-                <v-icon size="40" class="text-white opacity-60">mdi-cash-multiple</v-icon>
-              </v-card-text>
-            </v-card>
-          </v-col>
-
-          <v-col cols="12" sm="6" lg="3">
-            <v-card class="stat-card" color="grey-darken-2" variant="flat">
-              <v-card-text class="d-flex align-center">
-                <div class="flex-grow-1">
-                  <div class="text-h4 font-weight-bold text-white">{{ paymentsToday }}</div>
-                  <div class="text-subtitle-2 text-white opacity-80">Daily Payments Today</div>
-                </div>
-                <v-icon size="40" class="text-white opacity-60">mdi-credit-card</v-icon>
-              </v-card-text>
-            </v-card>
-          </v-col>
-
-          <v-col cols="12" sm="6" lg="3">
-            <v-card class="stat-card" color="error" variant="flat">
-              <v-card-text class="d-flex align-center">
-                <div class="flex-grow-1">
-                  <div class="text-h4 font-weight-bold text-white">{{ overdueAccounts }}</div>
-                  <div class="text-subtitle-2 text-white opacity-80">Overdue Daily Payments</div>
-                </div>
-                <v-icon size="40" class="text-white opacity-60">mdi-alert-circle</v-icon>
-              </v-card-text>
-            </v-card>
-          </v-col>
-
-          <v-col cols="12" sm="6" lg="3">
-            <v-card class="stat-card" color="grey-darken-2" variant="flat">
-              <v-card-text class="d-flex align-center">
-                <div class="flex-grow-1">
-                  <div class="text-h4 font-weight-bold text-white">{{ activeLoansCount }}</div>
-                  <div class="text-subtitle-2 text-white opacity-80">Active Business Loans</div>
-                </div>
-                <v-icon size="40" class="text-white opacity-60">mdi-briefcase</v-icon>
-              </v-card-text>
-            </v-card>
-          </v-col>
-        </v-row>
+        <!-- Summary Cards Removed -->
 
         <!-- Loan Selector for Payment Recording -->
         <v-card class="mb-6">
@@ -799,6 +750,19 @@ const recordPayment = async () => {
     // Refresh data
     await loadLoanSchedule()
     await loadPayments()
+
+    // Check if loan is fully paid
+    const allPaid = loanSchedule.value.every(item => item.status === 'paid')
+    if (allPaid) {
+      await client.request(
+        updateItem('loan', selectedLoan.value.id, {
+          fully_paid: true
+        })
+      )
+      // Refresh active loans list to reflect changes (e.g. might move out of active list if we filter by fully_paid)
+      await loadActiveLoans()
+      alert(`Loan fully paid!`)
+    }
 
     closePaymentDialog()
     alert(`Payment of ₱${amountPaid.toLocaleString()} recorded successfully!`)

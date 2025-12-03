@@ -369,7 +369,7 @@ export const useRiskAssessment = () => {
     try {
       return await client.request(
         readItems("risk_assessments", {
-          filter: { loan_id: { _eq: loanId } },
+          filter: { loan: { _eq: loanId } },
         }),
       );
     } catch (error) {

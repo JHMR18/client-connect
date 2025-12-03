@@ -4,12 +4,12 @@
       <!-- Header -->
       <div class="d-flex justify-space-between align-center mb-8">
         <div>
-          <h1 class="text-h4 font-weight-bold mb-2">Loan Applications</h1>
-          <p class="text-subtitle-1 text-medium-emphasis">Review and manage loan applications</p>
+          <h1 class="text-h4 font-weight-bold mb-2">Active Loans</h1>
+          <p class="text-subtitle-1 text-medium-emphasis">Manage and monitor active loans</p>
         </div>
 
         <v-btn
-          color="error"
+          color="primary"
           prepend-icon="mdi-refresh"
           @click="loadApplications"
           :loading="loading"
@@ -22,20 +22,16 @@
       <v-card class="mb-6">
         <v-card-text>
           <v-row>
-            <v-col cols="12" md="3">
-              <v-select
-                v-model="filters.status"
-                :items="statusOptions"
-                label="Status"
+            <v-col cols="12" md="4">
+              <v-text-field
+                v-model="searchQuery"
+                label="Search Client"
+                prepend-inner-icon="mdi-magnify"
                 variant="outlined"
                 clearable
-                @update:model-value="filterApplications"
               />
             </v-col>
-            <v-col cols="12" md="3">
-              <!-- Loan Product Filter Removed -->
-            </v-col>
-            <v-col cols="12" md="3">
+            <v-col cols="12" md="4">
               <v-text-field
                 v-model="filters.amountFrom"
                 label="Amount From (₱)"
@@ -44,7 +40,7 @@
                 @update:model-value="filterApplications"
               />
             </v-col>
-            <v-col cols="12" md="3">
+            <v-col cols="12" md="4">
               <v-text-field
                 v-model="filters.amountTo"
                 label="Amount To (₱)"
@@ -85,27 +81,9 @@
           <!-- Actions -->
           <template #item.actions="{ item }">
             <div class="d-flex gap-2">
-              <v-btn color="error" size="small" variant="tonal" @click="viewApplication(item)">
+              <v-btn color="primary" size="small" variant="tonal" @click="viewApplication(item)">
                 <v-icon>mdi-eye</v-icon>
-              </v-btn>
-
-              <v-btn
-                v-if="item.status === 'pending'"
-                color="success"
-                size="small"
-                variant="tonal"
-                @click="approveApplication(item)"
-              >
-                <v-icon>mdi-check</v-icon>
-              </v-btn>
-              <v-btn
-                v-if="item.status === 'pending'"
-                color="error"
-                size="small"
-                variant="tonal"
-                @click="rejectApplication(item)"
-              >
-                <v-icon>mdi-close</v-icon>
+                View
               </v-btn>
             </div>
           </template>
@@ -114,7 +92,7 @@
           <template #no-data>
             <div class="text-center pa-8">
               <v-icon size="64" class="text-disabled mb-4">mdi-file-document-outline</v-icon>
-              <p class="text-h6 text-disabled">No applications found</p>
+              <p class="text-h6 text-disabled">No active loans found</p>
             </div>
           </template>
         </v-data-table>
@@ -125,7 +103,7 @@
         <v-card v-if="selectedApplication">
           <v-card-title class="d-flex justify-space-between align-center">
             <div>
-              <h3>Application Details</h3>
+              <h3>Loan Details</h3>
               <p class="text-subtitle-2 text-medium-emphasis mb-0">
                 ID: {{ selectedApplication.id }}
               </p>
@@ -264,7 +242,7 @@
                         v-for="doc in selectedApplication.documents"
                         :key="doc.type"
                       >
-                        <v-card class="document-card" variant="tonal" color="error">
+                        <v-card class="document-card" variant="tonal" color="primary">
                           <v-card-text class="text-center">
                             <v-icon size="32" class="mb-2">{{ getDocumentIcon(doc.type) }}</v-icon>
                             <p class="text-caption">{{ doc.type }}</p>
@@ -285,101 +263,50 @@
 
           <v-card-actions>
             <v-spacer />
-            <v-btn
-              v-if="selectedApplication.status === 'pending'"
-              color="error"
-              variant="outlined"
-              @click="rejectApplication(selectedApplication)"
-            >
-              Reject
-            </v-btn>
-            <v-btn
-              v-if="selectedApplication.status === 'pending'"
-              color="success"
-              @click="approveApplication(selectedApplication)"
-            >
-              Approve
-            </v-btn>
             <v-btn @click="showDetails = false">Close</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
-
-      <!-- Confirm Dialog -->
-      <v-dialog v-model="showConfirm" max-width="400">
-        <v-card>
-          <v-card-title>{{ confirmTitle }}</v-card-title>
-          <v-card-text>{{ confirmMessage }}</v-card-text>
-          <v-card-actions>
-            <v-spacer />
-            <v-btn @click="showConfirm = false">Cancel</v-btn>
-            <v-btn
-              :color="confirmAction === 'approve' ? 'success' : 'error'"
-              @click="executeAction"
-            >
-              {{ confirmAction === "approve" ? "Approve" : "Reject" }}
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
-
-
     </v-container>
   </AdminLayout>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
-import { useRouter } from "vue-router";
 import { useLoanApplications, useLoanProducts } from "@/utils/useSmartLoanApi";
-import { getCurrentUser } from "@/utils/useDirectus";
 import AdminLayout from "@/layouts/AdminLayout.vue";
 
-const router = useRouter();
 const loading = ref(false);
 const showDetails = ref(false);
-const showConfirm = ref(false);
-
 const selectedApplication = ref(null);
-const confirmTitle = ref("");
-const confirmMessage = ref("");
-const confirmAction = ref("");
 const itemsPerPage = ref(10);
-const currentUser = ref(null);
+const searchQuery = ref("");
 
 // API composables
-const {
-  getApplications,
-  approveApplication: approveApplicationApi,
-  rejectApplication: rejectApplicationApi,
-} = useLoanApplications();
+const { getApplications } = useLoanApplications();
 const { getProducts } = useLoanProducts();
-
 
 // Filters
 const filters = ref({
-  status: null,
-  loanProduct: null,
   amountFrom: null,
   amountTo: null,
 });
 
 // Applications data
 const applications = ref([]);
-const loanProductOptions = ref([]);
-
-// Risk assessment data
-
 
 const filteredApplications = computed(() => {
   let filtered = applications.value;
 
-  if (filters.value.status) {
-    filtered = filtered.filter((app) => app.status === filters.value.status);
-  }
+  // Filter for active/approved loans only
+  filtered = filtered.filter((app) => ["approved", "active"].includes(app.status));
 
-  if (filters.value.loanProduct) {
-    filtered = filtered.filter((app) => app.loanProduct === filters.value.loanProduct);
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase();
+    filtered = filtered.filter((app) => 
+      app.clientName.toLowerCase().includes(query) ||
+      app.id.toString().includes(query)
+    );
   }
 
   if (filters.value.amountFrom) {
@@ -395,34 +322,23 @@ const filteredApplications = computed(() => {
 
 // Table configuration
 const headers = [
-  { title: "Application ID", key: "id", sortable: true },
+  { title: "Loan ID", key: "id", sortable: true },
   { title: "Client Name", key: "clientName", sortable: true },
   { title: "Amount", key: "loanAmount", sortable: true },
   { title: "Status", key: "status", sortable: true },
-  { title: "Date", key: "applicationDate", sortable: true },
-  { title: "Actions", key: "actions", sortable: false, width: "120px" },
-];
-
-const statusOptions = [
-  { title: "Pending", value: "pending" },
-  { title: "Under Review", value: "under_review" },
-  { title: "Approved", value: "approved" },
-  { title: "Rejected", value: "rejected" },
+  { title: "Approval Date", key: "applicationDate", sortable: true },
+  { title: "Actions", key: "actions", sortable: false, width: "100px" },
 ];
 
 // Methods
 const getStatusColor = (status: string) => {
   switch (status) {
-    case "pending":
-      return "orange-darken-2";
+    case "active":
+      return "success";
     case "approved":
-      return "green-darken-2";
-    case "rejected":
-      return "error";
-    case "under_review":
-      return "red-darken-1";
+      return "blue";
     default:
-      return "error";
+      return "grey";
   }
 };
 
@@ -449,6 +365,7 @@ const getDocumentIcon = (type: string) => {
 };
 
 const formatDate = (dateStr: string) => {
+  if (!dateStr) return "N/A";
   return new Date(dateStr).toLocaleDateString("en-US", {
     year: "numeric",
     month: "short",
@@ -461,58 +378,8 @@ const viewApplication = (application: any) => {
   showDetails.value = true;
 };
 
-const approveApplication = (application: any) => {
-  selectedApplication.value = application;
-  confirmTitle.value = "Approve Application";
-  confirmMessage.value = `Are you sure you want to approve the loan application for ${application.clientName}?`;
-  confirmAction.value = "approve";
-  showConfirm.value = true;
-};
-
-const rejectApplication = (application: any) => {
-  selectedApplication.value = application;
-  confirmTitle.value = "Reject Application";
-  confirmMessage.value = `Are you sure you want to reject the loan application for ${application.clientName}?`;
-  confirmAction.value = "reject";
-  showConfirm.value = true;
-};
-
-const executeAction = async () => {
-  try {
-    if (selectedApplication.value && currentUser.value) {
-      const remarks = `${confirmAction.value === "approve" ? "Approved" : "Rejected"} by ${currentUser.value.first_name} ${currentUser.value.last_name}`;
-
-      if (confirmAction.value === "approve") {
-        await approveApplicationApi(selectedApplication.value.id, currentUser.value.id, remarks);
-      } else {
-        await rejectApplicationApi(selectedApplication.value.id, currentUser.value.id, remarks);
-      }
-
-      // Refresh applications list
-      await loadApplications();
-
-      alert(
-        `Application ${confirmAction.value === "approve" ? "approved" : "rejected"} successfully!`,
-      );
-    }
-  } catch (error) {
-    console.error("Error updating application:", error);
-    alert("Error updating application. Please try again.");
-  }
-
-  showConfirm.value = false;
-  showDetails.value = false;
-};
-
 const viewDocument = (doc: any) => {
-  // Here you would open/download the document
   console.log("View document:", doc);
-};
-
-
-
-const filterApplications = () => {
-  // Trigger reactivity for computed property
 };
 
 const loadApplications = async () => {
@@ -526,80 +393,63 @@ const loadApplications = async () => {
       clientName: `${app.client?.first_name || "Unknown"} ${app.client?.last_name || ""}`.trim(),
       loanProduct: app.loan_product?.[0]?.loan_products_id?.name || "Unknown",
       loanAmount: app.principal_amount,
+      status: app.status,
+      applicationDate: app.approval_date || app.application_date, // Use approval date for active loans if available
       termMonths: app.term_months,
       purpose: app.purpose,
-      status: app.status,
-      applicationDate: app.application_date,
+      monthlyIncome: app.monthly_income,
+      monthlyExpenses: app.monthly_expenses,
+      businessName: app.business_name,
+      businessType: app.business_type,
+      yearsInBusiness: app.years_in_business,
       mobileNumber: app.client?.mobile_number || "N/A",
       civilStatus: app.client?.civil_status || "N/A",
       address: app.client?.present_address || "N/A",
-      businessName: app.business_name || "N/A",
-      businessType: app.business_type || "N/A",
-      yearsInBusiness: app.years_in_business || 0,
-      monthlyIncome: app.monthly_income || 0,
-      monthlyExpenses: app.monthly_expenses || 0,
-      documents: [], // Documents would be handled separately
-    }));
-
-    // Transform products for filter options
-    loanProductOptions.value = products.map((product) => ({
-      title: product.name,
-      value: product.name,
+      documents: app.loan_requirements?.map((req) => ({
+        type: req.requirement_type,
+        file: req.file,
+      })) || [],
     }));
   } catch (error) {
     console.error("Error loading applications:", error);
-    alert("Error loading applications. Please try again.");
   } finally {
     loading.value = false;
   }
 };
 
-onMounted(async () => {
-  try {
-    // Get current user
-    currentUser.value = await getCurrentUser();
-
-    // Load applications
-    await loadApplications();
-  } catch (error) {
-    console.error("Error loading initial data:", error);
-  }
+onMounted(() => {
+  loadApplications();
 });
 </script>
 
 <style scoped>
 .info-grid {
   display: grid;
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
 }
 
 .info-item {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding: 8px 0;
-  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+  flex-direction: column;
 }
 
-.info-item:last-child {
-  border-bottom: none;
+.label {
+  font-size: 0.75rem;
+  color: rgba(0, 0, 0, 0.6);
+  margin-bottom: 4px;
 }
 
-.info-item .label {
+.value {
   font-weight: 500;
-  color: rgb(var(--v-theme-on-surface));
-  opacity: 0.6;
-  min-width: 120px;
-}
-
-.info-item .value {
-  font-weight: 400;
-  text-align: right;
+  font-size: 1rem;
 }
 
 .document-card {
-  height: 120px;
-  display: flex;
-  align-items: center;
+  transition: transform 0.2s;
+}
+
+.document-card:hover {
+  transform: translateY(-2px);
 }
 </style>
