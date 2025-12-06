@@ -961,73 +961,128 @@
                       <v-card variant="outlined" class="mb-4">
                         <v-card-title class="pb-3">
                           <v-icon class="me-2" color="error">mdi-cash-multiple</v-icon>
-                          Loan Breakdown
+                          LOAN SLIP
                         </v-card-title>
                         <v-card-text class="pt-0">
-                          <!-- Header Row -->
-                          <v-row class="loan-breakdown-header">
-                            <v-col cols="12" md="3" class="text-center py-2">
-                              <div class="text-subtitle-1 font-weight-bold text-black">
-                                Amount Borrowed
-                              </div>
-                            </v-col>
-                            <v-col cols="12" md="3" class="text-center py-2">
-                              <div class="text-subtitle-1 font-weight-bold text-black">
-                                Payable in Days
-                              </div>
-                            </v-col>
-                            <v-col cols="12" md="3" class="text-center py-2">
-                              <div class="text-subtitle-1 font-weight-bold text-black">
-                                Net Proceeds
-                              </div>
-                            </v-col>
-                            <v-col cols="12" md="3" class="text-center py-2">
-                              <div class="text-subtitle-1 font-weight-bold text-black">
-                                Amount to be Paid
-                              </div>
-                            </v-col>
-                          </v-row>
+                          <!-- Top Section: Customer Info -->
+                          <div class="mb-4">
+                            <v-row dense>
+                              <v-col cols="6">
+                                <div style="color: black; font-size: 14px; margin-bottom: 8px;">
+                                  <strong>Customer Name:</strong>
+                                </div>
+                              </v-col>
+                              <v-col cols="6" class="text-right">
+                                <div style="color: black; font-size: 14px; margin-bottom: 8px; border: 1px solid #666; padding: 4px 8px; display: inline-block;">
+                                  {{ application.firstName }} {{ application.lastName }}
+                                </div>
+                              </v-col>
+                            </v-row>
+                            
+                            <v-row dense>
+                              <v-col cols="6">
+                                <div style="color: black; font-size: 14px; margin-bottom: 8px;">
+                                  <strong>Loan Amount:</strong>
+                                </div>
+                              </v-col>
+                              <v-col cols="6" class="text-right">
+                                <div style="color: black; font-size: 14px; margin-bottom: 8px; border: 1px solid #666; padding: 4px 8px; display: inline-block;">
+                                  {{ application.loanAmount?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+                                </div>
+                              </v-col>
+                            </v-row>
+                            
+                            <v-row dense>
+                              <v-col cols="6">
+                                <div style="color: black; font-size: 14px;">
+                                  <strong>Daily Payment:</strong>
+                                </div>
+                              </v-col>
+                              <v-col cols="6" class="text-right">
+                                <div style="color: black; font-size: 14px; border: 1px solid #666; padding: 4px 8px; display: inline-block;">
+                                  {{ loanCalculations.dailyPayment.toFixed(2) }}
+                                </div>
+                              </v-col>
+                            </v-row>
+                          </div>
 
-                          <v-divider class="my-2" />
+                          <v-divider class="my-3" />
 
-                          <!-- Amount Row -->
-                          <v-row class="loan-breakdown-row">
-                            <v-col cols="12" md="3" class="text-center py-3">
-                              <div class="text-h5 font-weight-bold text-black">
-                                ₱{{ application.loanAmount?.toLocaleString() || 0 }}
-                              </div>
-                            </v-col>
-                            <v-col cols="12" md="3" class="text-center py-3">
-                              <div class="text-h5 font-weight-bold text-black">
-                                {{ loanCalculations.numberOfDays }}
-                              </div>
-                            </v-col>
-                            <v-col cols="12" md="3" class="text-center py-3">
-                              <div class="text-h5 font-weight-bold text-black">
-                                ₱{{ loanCalculations.netProceeds.toLocaleString() }}
-                              </div>
-                            </v-col>
-                            <v-col cols="12" md="3" class="text-center py-3">
-                              <div class="text-h5 font-weight-bold text-black">
-                                ₱{{
-                                  (
-                                    loanCalculations.dailyPayment * loanCalculations.numberOfDays
-                                  ).toLocaleString()
-                                }}
-                              </div>
-                            </v-col>
-                          </v-row>
+                          <!-- Deductions Section -->
+                          <div class="mb-3">
+                            <div style="color: black; font-size: 15px; font-weight: bold; margin-bottom: 12px;">
+                              Less Deduction
+                            </div>
+                            
+                            <!-- 17% Interest -->
+                            <v-row dense class="mb-2">
+                              <v-col cols="8">
+                                <div style="color: black; font-size: 14px;">
+                                  • 17% Interest
+                                </div>
+                              </v-col>
+                              <v-col cols="4" class="text-right">
+                                <div style="color: black; font-size: 14px;">
+                                  {{ loanCalculations.interest.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+                                </div>
+                              </v-col>
+                            </v-row>
+                            
+                            <!-- 1% Loan Discharge -->
+                            <v-row dense class="mb-2">
+                              <v-col cols="8">
+                                <div style="color: black; font-size: 14px;">
+                                  • 1% Loan Discharge
+                                </div>
+                              </v-col>
+                              <v-col cols="4" class="text-right">
+                                <div style="color: black; font-size: 14px;">
+                                  {{ loanCalculations.loanDischarge.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+                                </div>
+                              </v-col>
+                            </v-row>
+                            
+                            <!-- Processing Fee -->
+                            <v-row dense class="mb-2">
+                              <v-col cols="8">
+                                <div style="color: black; font-size: 14px;">
+                                  • Processing Fee
+                                </div>
+                              </v-col>
+                              <v-col cols="4" class="text-right">
+                                <div style="color: black; font-size: 14px;">
+                                  150.00
+                                </div>
+                              </v-col>
+                            </v-row>
+                            
+                            <!-- Doc Stamp -->
+                            <v-row dense class="mb-2">
+                              <v-col cols="8">
+                                <div style="color: black; font-size: 14px;">
+                                  • .50 Doc. Stamp
+                                </div>
+                              </v-col>
+                              <v-col cols="4" class="text-right">
+                                <div style="color: black; font-size: 14px;">
+                                  45.00
+                                </div>
+                              </v-col>
+                            </v-row>
+                          </div>
 
-                          <v-divider class="my-2" />
+                          <v-divider class="my-3" />
 
-                          <!-- Daily Payment Row -->
-                          <v-row class="loan-breakdown-row">
-                            <v-col cols="12" class="text-center py-3">
-                              <div class="text-h6 text-black">
-                                Daily payment of
-                                <strong
-                                  >₱{{ loanCalculations.dailyPayment.toLocaleString() }}</strong
-                                >
+                          <!-- Net Proceed -->
+                          <v-row dense>
+                            <v-col cols="8">
+                              <div style="color: black; font-size: 16px; font-weight: bold;">
+                                NET PROCEED
+                              </div>
+                            </v-col>
+                            <v-col cols="4" class="text-right">
+                              <div style="color: black; font-size: 16px; font-weight: bold;">
+                                {{ loanCalculations.netProceeds.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                               </div>
                             </v-col>
                           </v-row>
