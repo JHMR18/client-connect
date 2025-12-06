@@ -8,19 +8,25 @@ const router = createRouter({
 });
 
 router.beforeEach(async (to, from, next) => {
-  const { isAuthenticated, checkAuth } = useAuth();
+  const { isAuthenticated, checkAuth, getDashboardRoute } = useAuth();
 
-  const publicRoutes = ["/", "/login", "/admin/login", "/client/login", "/client/register"];
-  const isPublicRoute = publicRoutes.includes(to.path) || to.path === "/";
+  const publicRoutes = ["/", "/client/register"];
+  const isPublicRoute = publicRoutes.includes(to.path);
 
+  // If user is authenticated and trying to access login page, redirect to dashboard
+  if (to.path === "/" && isAuthenticated.value) {
+    const dashboardRoute = await getDashboardRoute();
+    next(dashboardRoute);
+    return;
+  }
+
+  // For protected routes, check authentication
   if (!isPublicRoute && !isAuthenticated.value) {
     next("/");
     return;
   }
 
-  // Allow authenticated users to access public routes
-  // Remove the redirect loop that was preventing page from loading
-
+  // For authenticated users on protected routes, verify token is still valid
   if (!isPublicRoute && isAuthenticated.value) {
     const isValid = await checkAuth();
     if (!isValid) {

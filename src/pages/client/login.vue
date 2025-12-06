@@ -90,11 +90,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useAuth } from "@/utils/useAuth";
 
 const router = useRouter();
+
+// Redirect to unified login page
+onMounted(() => {
+  router.replace("/");
+});
+
 const loginForm = ref();
 const email = ref("");
 const password = ref("");

@@ -1,6 +1,13 @@
 import { computed, readonly } from "vue";
 import { useCookie } from "./useCookie";
-import { client, getCurrentUser, processLogout } from "./useDirectus";
+import {
+  client,
+  getCurrentUser,
+  processLogout,
+  refreshToken,
+  shouldRefreshToken,
+  getUserRole
+} from "./useDirectus";
 
 export function useAuth() {
   const accessToken = useCookie<string | null>("accessToken", { default: () => null });
@@ -24,6 +31,10 @@ export function useAuth() {
           sessionStorage.setItem("refresh_token", response.refresh_token);
         }
 
+        // Store token expiry time (15 minutes from now)
+        const expiryTime = Date.now() + (15 * 60 * 1000);
+        sessionStorage.setItem("token_expiry", expiryTime.toString());
+
         const user = await getCurrentUser();
         sessionStorage.setItem("userData", JSON.stringify(user));
 
@@ -45,6 +56,7 @@ export function useAuth() {
       accessToken.value = null;
       sessionStorage.removeItem("userData");
       sessionStorage.removeItem("refresh_token");
+      sessionStorage.removeItem("token_expiry");
     }
   };
 
@@ -54,12 +66,59 @@ export function useAuth() {
     }
 
     try {
+      // Check if token needs refresh
+      if (shouldRefreshToken()) {
+        const refreshed = await refreshToken();
+        if (!refreshed) {
+          await logout();
+          return false;
+        }
+      }
+
       await getCurrentUser();
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error("Auth check failed:", error);
+
+      // Try to refresh token on 401/403 errors
+      if (error?.response?.status === 401 || error?.response?.status === 403) {
+        const refreshed = await refreshToken();
+        if (refreshed) {
+          try {
+            await getCurrentUser();
+            return true;
+          } catch (retryError) {
+            console.error("Retry after refresh failed:", retryError);
+          }
+        }
+      }
+
       await logout();
       return false;
+    }
+  };
+
+  // Get the dashboard route based on user's role
+  const getDashboardRoute = async (): Promise<string> => {
+    try {
+      const roleName = await getUserRole();
+
+      if (!roleName) {
+        return "/client/payments"; // Default fallback
+      }
+
+      const roleNameLower = roleName.toLowerCase();
+
+      // Check for admin roles
+      if (roleNameLower.includes("admin") || roleNameLower === "administrator") {
+        return "/admin/dashboard";
+      }
+
+      // Default to client dashboard
+      return "/client/payments";
+    } catch (error) {
+      console.error("Error getting dashboard route:", error);
+      return "/client/payments"; // Safe fallback
     }
   };
 
@@ -70,5 +129,6 @@ export function useAuth() {
     login,
     logout,
     checkAuth,
+    getDashboardRoute,
   };
 }

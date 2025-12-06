@@ -6,6 +6,7 @@ import {
   refresh,
   rest,
 } from "@directus/sdk";
+import { useCookie } from "./useCookie";
 
 const baseUrl = import.meta.env.VITE_DIRECTUS_URL || "http://localhost:8055";
 
@@ -21,27 +22,6 @@ export const getCurrentUser = async () => {
   );
 };
 
-export const refreshToken = async () => {
-  const response = await client.request(
-    refresh("json", sessionStorage.getItem("refresh_token") ?? "")
-  );
-
-  sessionStorage.setItem("access_token", response.access_token?.toString() ?? "");
-  sessionStorage.setItem("refresh_token", response.refresh_token?.toString() ?? "");
-};
-
-export const processLogout = async () => {
-  try {
-    const refresh_token = sessionStorage.getItem("refresh_token");
-
-    await client.request(logout(refresh_token, "json"));
-
-    sessionStorage.clear();
-  } catch (e) {
-    console.log(e);
-  }
-};
-
 // Helper function to get access token from cookie
 const getAccessToken = (): string | null => {
   const cookies = document.cookie.split(';');
@@ -52,6 +32,106 @@ const getAccessToken = (): string | null => {
     }
   }
   return null;
+};
+
+// Set access token in cookie
+const setAccessToken = (token: string) => {
+  const accessTokenCookie = useCookie<string | null>("accessToken", { default: () => null });
+  accessTokenCookie.value = token;
+};
+
+export const refreshToken = async (): Promise<boolean> => {
+  try {
+    const refresh_token = sessionStorage.getItem("refresh_token");
+
+    if (!refresh_token) {
+      return false;
+    }
+
+    const response = await client.request(
+      refresh("json", refresh_token)
+    );
+
+    if (response.access_token) {
+      setAccessToken(response.access_token);
+      sessionStorage.setItem("access_token", response.access_token.toString());
+
+      if (response.refresh_token) {
+        sessionStorage.setItem("refresh_token", response.refresh_token.toString());
+      }
+
+      // Store token expiry time (typically 15 minutes, store as timestamp)
+      const expiryTime = Date.now() + (15 * 60 * 1000); // 15 minutes from now
+      sessionStorage.setItem("token_expiry", expiryTime.toString());
+
+      return true;
+    }
+
+    return false;
+  } catch (error) {
+    console.error("Token refresh failed:", error);
+    return false;
+  }
+};
+
+// Check if token is about to expire (within 2 minutes)
+export const shouldRefreshToken = (): boolean => {
+  const expiryTime = sessionStorage.getItem("token_expiry");
+  if (!expiryTime) return false;
+
+  const timeUntilExpiry = parseInt(expiryTime) - Date.now();
+  // Refresh if less than 2 minutes remaining
+  return timeUntilExpiry < (2 * 60 * 1000);
+};
+
+export const processLogout = async () => {
+  try {
+    const refresh_token = sessionStorage.getItem("refresh_token");
+
+    if (refresh_token) {
+      await client.request(logout(refresh_token, "json"));
+    }
+
+    sessionStorage.clear();
+  } catch (e) {
+    console.log(e);
+  }
+};
+
+// Get user's role name from Directus
+export const getUserRole = async (): Promise<string | null> => {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user || !user.role) {
+      return null;
+    }
+
+    const accessToken = getAccessToken();
+    if (!accessToken) {
+      return null;
+    }
+
+    // Fetch role details
+    const response = await fetch(`${baseUrl}/roles/${user.role}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.data?.name || null;
+  } catch (error) {
+    console.error("Error fetching user role:", error);
+    return null;
+  }
 };
 
 export const validateUserRole = async (
