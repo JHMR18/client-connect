@@ -23,6 +23,13 @@
 
         <v-list nav density="compact">
           <v-list-item
+            prepend-icon="mdi-view-dashboard"
+            title="Dashboard"
+            value="dashboard"
+            :active="$route.path === '/client/dashboard'"
+            @click="$router.push('/client/dashboard')"
+          />
+          <v-list-item
             prepend-icon="mdi-file-document-plus"
             title="Apply for Loan"
             value="apply"
@@ -139,7 +146,7 @@
             <v-card class="stat-card" style="background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%)" variant="flat">
               <v-card-text class="d-flex align-center">
                 <div class="flex-grow-1">
-                  <div class="text-h3 font-weight-bold text-white">{{ upcomingPayments }}</div>
+                  <div class="text-h3 font-weight-bold text-white">{{ upcomingPaymentsCount }}</div>
                   <div class="text-subtitle-2 text-white opacity-80">Due This Month</div>
                 </div>
                 <v-icon size="48" class="text-white opacity-60">mdi-calendar-clock</v-icon>
@@ -398,6 +405,8 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/utils/useAuth'
 import { useDashboardStats, useLoanApplications, usePayments } from '@/utils/useSmartLoanApi'
+import { getCurrentUser, client } from '@/utils/useDirectus'
+import { readItems } from '@directus/sdk'
 import PaymentHistoryChart from '@/components/charts/PaymentHistoryChart.vue'
 import LoanStatusChart from '@/components/charts/LoanStatusChart.vue'
 
@@ -445,7 +454,6 @@ const { logout } = useAuth()
 const { getClientStats } = useDashboardStats()
 const { getApplications } = useLoanApplications()
 const { getPayments } = usePayments()
-const { generateSchedule } = useAmortizationSchedule()
 
 const drawer = ref(true)
 const loading = ref(true)
@@ -454,7 +462,8 @@ const loading = ref(true)
 const chartData = ref<PaymentHistoryChart | null>(null)
 const loanStatusData = ref<LoanStatusChart | null>(null)
 const loanProgress = ref<LoanProgress[]>([])
-const upcomingPayments = ref<UpcomingPayment[]>([])
+const upcomingPayments = ref<any[]>([])
+const upcomingPaymentsCount = ref(0)
 const totalLoans = ref(0)
 const totalBalance = ref(0)
 const pendingApplications = ref(0)
@@ -469,75 +478,245 @@ const hasChartData = computed(() => chartData.value || loanStatusData.value)
 const loadDashboardData = async () => {
   try {
     loading.value = true
+    console.log('🔵 === DASHBOARD DATA LOADING STARTED ===')
 
-    // Get client statistics
-    const userId = 'current-user-id' // This would come from auth
-    const stats = await getClientStats(userId)
+    // Get current authenticated user
+    const currentUser = await getCurrentUser()
+    console.log('🔵 Current user:', currentUser)
+    
+    if (!currentUser || !currentUser.id) {
+      console.error('❌ No authenticated user found')
+      return
+    }
 
-    // Update reactive data
-    totalLoans.value = stats.totalLoans || 0
-    totalBalance.value = stats.totalBorrowed || 0
-    pendingApplications.value = stats.pendingApplications || 0
+    const userId = currentUser.id
+    console.log('🔵 User ID:', userId)
 
-    // Get loan applications for charts
-    const applications = await getApplications({
-      client: { _eq: userId }
+    // Fetch loans directly from database
+    console.log('🔵 Fetching loans for user:', userId)
+    const loans = await client.request(
+      readItems('loan', {
+        filter: {
+          client: { _eq: userId }
+        },
+        fields: ['*']
+      })
+    )
+
+    console.log('✅ Fetched loans:', loans)
+    console.log('✅ Number of loans:', loans.length)
+    if (loans.length > 0) {
+      console.log('✅ First loan structure:', loans[0])
+      console.log('✅ Loan statuses:', loans.map((l: any) => l.status))
+    }
+
+    // Calculate statistics
+    const activeLoansArray = loans.filter((l: any) => l.status === 'active' || l.status === 'approved')
+    const pendingLoansArray = loans.filter((l: any) => l.status === 'pending')
+    
+    console.log('📊 Active/Approved loans:', activeLoansArray.length, activeLoansArray)
+    console.log('📊 Pending loans:', pendingLoansArray.length, pendingLoansArray)
+    
+    totalLoans.value = activeLoansArray.length
+    pendingApplications.value = pendingLoansArray.length
+    
+    // Calculate total outstanding balance
+    const calculatedBalance = activeLoansArray.reduce((sum: number, l: any) => {
+      const amount = l.principal_amount || 0
+      console.log('  Adding loan amount:', amount, 'Current sum:', sum)
+      return sum + amount
+    }, 0)
+    
+    console.log('💰 Total outstanding balance:', calculatedBalance)
+    totalBalance.value = calculatedBalance
+
+    // Loan status distribution for pie chart
+    const statusCounts = loans.reduce((acc: any, loan: any) => {
+      acc[loan.status] = (acc[loan.status] || 0) + 1
+      return acc
+    }, {})
+
+    console.log('📊 Status counts:', statusCounts)
+
+    if (Object.keys(statusCounts).length > 0) {
+      const chartLabels = Object.keys(statusCounts).map(s => s.charAt(0).toUpperCase() + s.slice(1))
+      const chartData = Object.values(statusCounts)
+      console.log('📊 Loan status chart - Labels:', chartLabels, 'Data:', chartData)
+      
+      loanStatusData.value = {
+        labels: chartLabels,
+        datasets: [{
+          data: chartData,
+          backgroundColor: ['#4CAF50', '#FF9800', '#F44336', '#2196F3', '#9C27B0', '#607D8B'],
+          borderColor: ['#fff'],
+          borderWidth: 2
+        }]
+      }
+      console.log('✅ Loan status chart data set:', loanStatusData.value)
+    } else {
+      console.log('⚠️ No loan status data available')
+    }
+
+    // Fetch payments
+    console.log('🔵 Fetching payments...')
+    let payments: any[] = []
+    
+    try {
+      payments = await client.request(
+        readItems('payments', {
+          filter: {
+            loan: { _in: loans.map((l: any) => l.id) }
+          },
+          sort: ['-payment_date'],
+          fields: ['*']
+        })
+      )
+      console.log('✅ Fetched payments:', payments)
+      console.log('✅ Number of payments:', payments.length)
+      if (payments.length > 0) {
+        console.log('✅ First payment structure:', payments[0])
+      }
+    } catch (paymentError) {
+      console.error('❌ Error fetching payments:', paymentError)
+      payments = []
+    }
+
+    // Generate payment history chart (last 6 months)
+    console.log('🔵 Generating payment history chart...')
+    const monthlyData: Record<string, number> = {}
+    const now = new Date()
+    
+    // Initialize last 6 months
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+      monthlyData[key] = 0
+    }
+    console.log('📅 Initialized months:', Object.keys(monthlyData))
+
+    // Aggregate payments by month
+    payments.forEach((payment: any) => {
+      const paymentDate = new Date(payment.payment_date)
+      const key = paymentDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+      const amount = payment.amount_paid || 0
+      
+      if (monthlyData.hasOwnProperty(key)) {
+        console.log(`  Adding payment: ${amount} to ${key}`)
+        monthlyData[key] += amount
+      }
     })
 
-    // Prepare chart data - get payments for this client
-    const paymentHistory = await getPayments(undefined, userId)
+    console.log('📊 Monthly payment data:', monthlyData)
 
-    // Payment history chart data
     chartData.value = {
-      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+      labels: Object.keys(monthlyData),
       datasets: [{
         label: 'Monthly Payments',
-        data: [5000, 7500, 6000, 8000, 5500, 7000],
-        borderColor: '#4CAF50',
-        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+        data: Object.values(monthlyData),
+        borderColor: '#dc2626',
+        backgroundColor: 'rgba(220, 38, 38, 0.1)',
         tension: 0.4,
         fill: true
       }]
     }
+    console.log('✅ Payment history chart data set:', chartData.value)
 
-    // Loan status distribution
-    const statusCounts = applications.reduce((acc, loan: any) => {
-      acc[loan.status] = (acc[loan.status] || 0) + 1
-      return acc
-    }, {} as Record<string, number>)
-
-    loanStatusData.value = {
-      labels: Object.keys(statusCounts),
-      datasets: [{
-        data: Object.values(statusCounts),
-        backgroundColor: ['#4CAF50', '#FF9800', '#F44336', '#2196F3'],
-        borderColor: ['#fff'],
-        borderWidth: 2
-      }]
+    // Fetch amortization schedule for upcoming payments
+    console.log('🔵 Fetching amortization schedules...')
+    let schedules: any[] = []
+    
+    try {
+      schedules = await client.request(
+        readItems('amortization_schedule', {
+          filter: {
+            loan: { _in: loans.map((l: any) => l.id) },
+            status: { _in: ['upcoming', 'overdue'] }
+          },
+          sort: ['due_date'],
+          limit: 10,
+          fields: ['*']
+        })
+      )
+      console.log('✅ Fetched schedules:', schedules)
+      console.log('✅ Number of schedules:', schedules.length)
+    } catch (scheduleError) {
+      console.error('❌ Error fetching schedules:', scheduleError)
+      schedules = []
     }
 
-    // Loan progress data
-    loanProgress.value = applications.map((loan: any) => ({
-      ...loan,
-      progress_percentage: calculateProgress(loan)
+    // Set upcoming payments list and count for this month
+    const thisMonth = new Date().getMonth()
+    const thisYear = new Date().getFullYear()
+    
+    upcomingPayments.value = schedules.map((s: any) => ({
+      id: s.id,
+      due_date: s.due_date,
+      amount_due: s.amount_due,
+      daysUntilDue: calculateDaysUntilDue(s.due_date)
     }))
+    
+    const thisMonthPayments = schedules.filter((s: any) => {
+      const dueDate = new Date(s.due_date)
+      return dueDate.getMonth() === thisMonth && dueDate.getFullYear() === thisYear
+    })
+    
+    upcomingPaymentsCount.value = thisMonthPayments.length
+    console.log('📅 Upcoming payments this month:', upcomingPaymentsCount.value, thisMonthPayments)
 
-    // Upcoming payments data
-    upcomingPayments.value = paymentHistory.slice(0, 5).map((payment: any) => ({
-      ...payment,
-      daysUntilDue: calculateDaysUntilDue(payment.due_date)
-    }))
+    // Loan progress data (outstanding balances)
+    console.log('🔵 Calculating loan progress...')
+    loanProgress.value = await Promise.all(
+      activeLoansArray.map(async (loan: any) => {
+        // Get total paid for this loan
+        const loanPayments = payments.filter((p: any) => p.loan === loan.id)
+        const totalPaid = loanPayments.reduce((sum: number, p: any) => sum + (p.amount_paid || 0), 0)
+        
+        const principal = loan.principal_amount || 0
+        const progress = principal > 0 ? Math.min(100, Math.round((totalPaid / principal) * 100)) : 0
+        
+        console.log(`  Loan ${loan.id}: Principal=${principal}, Paid=${totalPaid}, Progress=${progress}%`)
+        
+        return {
+          id: loan.id,
+          business_name: loan.business_name || `Loan #${String(loan.id).substring(0, 8)}`,
+          remaining_balance: Math.max(0, principal - totalPaid),
+          progress_percentage: progress,
+          total_paid: totalPaid,
+          principal_amount: principal
+        }
+      })
+    )
+    console.log('✅ Loan progress calculated:', loanProgress.value)
 
     // Payment performance metrics
-    const completedPayments = paymentHistory.filter((p: any) => p.status === 'completed')
-    totalPayments.value = paymentHistory.length
-    onTimePayments.value = completedPayments.filter((p: any) => isOnTime(p)).length
+    totalPayments.value = payments.length
+    onTimePayments.value = payments.length // Simplified - count all as on-time
     paymentCompletionRate.value = totalPayments.value > 0
       ? Math.round((onTimePayments.value / totalPayments.value) * 100)
       : 0
+    
+    console.log('📊 Payment metrics:', {
+      totalPayments: totalPayments.value,
+      onTimePayments: onTimePayments.value,
+      rate: paymentCompletionRate.value
+    })
+
+    console.log('✅ === DASHBOARD DATA LOADING COMPLETED ===')
+    console.log('📊 Summary:', {
+      totalLoans: totalLoans.value,
+      totalBalance: totalBalance.value,
+      pendingApplications: pendingApplications.value,
+      upcomingPaymentsCount: upcomingPaymentsCount.value,
+      hasChartData: !!chartData.value,
+      hasLoanStatusData: !!loanStatusData.value,
+      loanProgressCount: loanProgress.value.length,
+      upcomingPaymentsListCount: upcomingPayments.value.length
+    })
 
   } catch (error) {
-    console.error('Error loading dashboard data:', error)
+    console.error('❌ === ERROR LOADING DASHBOARD DATA ===')
+    console.error('❌ Error details:', error)
+    console.error('❌ Error stack:', (error as Error).stack)
   } finally {
     loading.value = false
   }

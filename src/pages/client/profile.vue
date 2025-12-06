@@ -16,6 +16,13 @@
 
         <v-list nav density="compact">
           <v-list-item
+            prepend-icon="mdi-view-dashboard"
+            title="Dashboard"
+            value="dashboard"
+            :active="$route.path === '/client/dashboard'"
+            @click="$router.push('/client/dashboard')"
+          />
+          <v-list-item
             prepend-icon="mdi-file-document-plus"
             title="Apply for Loan"
             value="apply"

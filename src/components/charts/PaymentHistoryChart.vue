@@ -8,6 +8,7 @@
 import { ref, onMounted, watch, nextTick } from 'vue'
 import {
   Chart,
+  LineController,
   CategoryScale,
   LinearScale,
   PointElement,
@@ -20,6 +21,7 @@ import {
 import { Line } from 'vue-chartjs'
 
 Chart.register(
+  LineController,
   CategoryScale,
   LinearScale,
   PointElement,

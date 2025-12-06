@@ -8,6 +8,7 @@
 import { ref, onMounted, watch, nextTick } from 'vue'
 import {
   Chart,
+  DoughnutController,
   CategoryScale,
   LinearScale,
   ArcElement,
@@ -17,6 +18,7 @@ import {
 } from 'chart.js'
 
 Chart.register(
+  DoughnutController,
   CategoryScale,
   LinearScale,
   ArcElement,
