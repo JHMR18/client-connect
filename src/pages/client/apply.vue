@@ -550,64 +550,128 @@
                       <!-- Loan Breakdown -->
                       <v-col cols="12" v-if="application.loanAmount > 0">
                         <v-divider class="my-4" />
-                        <h4 class="text-subtitle-1 mb-4">Loan Breakdown</h4>
+                        <h4 class="text-subtitle-1 mb-4" style="color: black;">LOAN SLIP</h4>
                         <v-card variant="outlined">
                           <v-card-text>
+                            <!-- Top Section: Customer Info -->
+                            <div class="mb-4">
+                              <v-row dense>
+                                <v-col cols="6">
+                                  <div style="color: black; font-size: 14px; margin-bottom: 8px;">
+                                    <strong>Customer Name:</strong>
+                                  </div>
+                                </v-col>
+                                <v-col cols="6" class="text-right">
+                                  <div style="color: black; font-size: 14px; margin-bottom: 8px; border: 1px solid #666; padding: 4px 8px; display: inline-block;">
+                                    {{ application.firstName }} {{ application.lastName }}
+                                  </div>
+                                </v-col>
+                              </v-row>
+                              
+                              <v-row dense>
+                                <v-col cols="6">
+                                  <div style="color: black; font-size: 14px; margin-bottom: 8px;">
+                                    <strong>Loan Amount:</strong>
+                                  </div>
+                                </v-col>
+                                <v-col cols="6" class="text-right">
+                                  <div style="color: black; font-size: 14px; margin-bottom: 8px; border: 1px solid #666; padding: 4px 8px; display: inline-block;">
+                                    {{ application.loanAmount?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+                                  </div>
+                                </v-col>
+                              </v-row>
+                              
+                              <v-row dense>
+                                <v-col cols="6">
+                                  <div style="color: black; font-size: 14px;">
+                                    <strong>Daily Payment:</strong>
+                                  </div>
+                                </v-col>
+                                <v-col cols="6" class="text-right">
+                                  <div style="color: black; font-size: 14px; border: 1px solid #666; padding: 4px 8px; display: inline-block;">
+                                    {{ loanCalculations.dailyPayment.toFixed(2) }}
+                                  </div>
+                                </v-col>
+                              </v-row>
+                            </div>
+
+                            <v-divider class="my-3" />
+
+                            <!-- Deductions Section -->
+                            <div class="mb-3">
+                              <div style="color: black; font-size: 15px; font-weight: bold; margin-bottom: 12px;">
+                                Less Deduction
+                              </div>
+                              
+                              <!-- 17% Interest -->
+                              <v-row dense class="mb-2">
+                                <v-col cols="8">
+                                  <div style="color: black; font-size: 14px;">
+                                    • 17% Interest
+                                  </div>
+                                </v-col>
+                                <v-col cols="4" class="text-right">
+                                  <div style="color: black; font-size: 14px;">
+                                    {{ loanCalculations.interest.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+                                  </div>
+                                </v-col>
+                              </v-row>
+                              
+                              <!-- 1% Loan Discharge -->
+                              <v-row dense class="mb-2">
+                                <v-col cols="8">
+                                  <div style="color: black; font-size: 14px;">
+                                    • 1% Loan Discharge
+                                  </div>
+                                </v-col>
+                                <v-col cols="4" class="text-right">
+                                  <div style="color: black; font-size: 14px;">
+                                    {{ loanCalculations.loanDischarge.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
+                                  </div>
+                                </v-col>
+                              </v-row>
+                              
+                              <!-- Processing Fee -->
+                              <v-row dense class="mb-2">
+                                <v-col cols="8">
+                                  <div style="color: black; font-size: 14px;">
+                                    • Processing Fee
+                                  </div>
+                                </v-col>
+                                <v-col cols="4" class="text-right">
+                                  <div style="color: black; font-size: 14px;">
+                                    150.00
+                                  </div>
+                                </v-col>
+                              </v-row>
+                              
+                              <!-- Doc Stamp -->
+                              <v-row dense class="mb-2">
+                                <v-col cols="8">
+                                  <div style="color: black; font-size: 14px;">
+                                    • .50 Doc. Stamp
+                                  </div>
+                                </v-col>
+                                <v-col cols="4" class="text-right">
+                                  <div style="color: black; font-size: 14px;">
+                                    45.00
+                                  </div>
+                                </v-col>
+                              </v-row>
+                            </div>
+
+                            <v-divider class="my-3" />
+
+                            <!-- Net Proceed -->
                             <v-row dense>
-                              <v-col cols="6" md="3">
-                                <div class="text-caption text-medium-emphasis">
-                                  Principal Amount
-                                </div>
-                                <div class="text-h6">
-                                  ₱{{ application.loanAmount?.toLocaleString() || 0 }}
+                              <v-col cols="8">
+                                <div style="color: black; font-size: 16px; font-weight: bold;">
+                                  NET PROCEED
                                 </div>
                               </v-col>
-                              <v-col cols="6" md="3">
-                                <div class="text-caption text-medium-emphasis">Interest (17%)</div>
-                                <div class="text-h6 text-error">
-                                  ₱{{ loanCalculations.interest.toLocaleString() }}
-                                </div>
-                              </v-col>
-                              <v-col cols="6" md="3">
-                                <div class="text-caption text-medium-emphasis">
-                                  Loan Discharge (Daily)
-                                </div>
-                                <div class="text-h6">
-                                  ₱{{ loanCalculations.loanDischarge.toLocaleString() }}
-                                </div>
-                              </v-col>
-                              <v-col cols="6" md="3">
-                                <div class="text-caption text-medium-emphasis">Processing Fee</div>
-                                <div class="text-h6">₱150</div>
-                              </v-col>
-                              <v-col cols="6" md="3">
-                                <div class="text-caption text-medium-emphasis">Doc Stamp</div>
-                                <div class="text-h6">₱45</div>
-                              </v-col>
-                              <v-col cols="6" md="3">
-                                <div class="text-caption text-medium-emphasis">
-                                  Total Deductions
-                                </div>
-                                <div class="text-h6 text-warning">
-                                  ₱{{ loanCalculations.totalDeductions.toLocaleString() }}
-                                </div>
-                              </v-col>
-                              <v-col cols="6" md="3">
-                                <div class="text-caption text-medium-emphasis">Net Proceeds</div>
-                                <div class="text-h6 text-success">
-                                  ₱{{ loanCalculations.netProceeds.toLocaleString() }}
-                                </div>
-                              </v-col>
-                              <v-col cols="6" md="3">
-                                <div class="text-caption text-medium-emphasis">Daily Payment</div>
-                                <div class="text-h6 text-primary">
-                                  ₱{{ loanCalculations.dailyPayment.toLocaleString() }}
-                                </div>
-                              </v-col>
-                              <v-col cols="6" md="3">
-                                <div class="text-caption text-medium-emphasis">Payment Period</div>
-                                <div class="text-h6 text-info">
-                                  {{ loanCalculations.numberOfDays }} days
+                              <v-col cols="4" class="text-right">
+                                <div style="color: black; font-size: 16px; font-weight: bold;">
+                                  {{ loanCalculations.netProceeds.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                                 </div>
                               </v-col>
                             </v-row>
