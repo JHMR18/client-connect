@@ -143,7 +143,7 @@
                         label="Mobile Number"
                         variant="outlined"
                         prepend-inner-icon="mdi-phone"
-                        :rules="[rules.required]"
+                        :rules="[rules.required, rules.mobileNumber]"
                         density="comfortable"
                         rounded="lg"
                       />
@@ -312,7 +312,8 @@ const rules = {
   required: (v: string) => !!v || "This field is required",
   email: (v: string) => /.+@.+\..+/.test(v) || "Email must be valid",
   minLength: (v: string) => v.length >= 8 || "Password must be at least 8 characters",
-  passwordMatch: (v: string) => v === formData.value.password || "Passwords must match"
+  passwordMatch: (v: string) => v === formData.value.password || "Passwords must match",
+  mobileNumber: (v: string) => /^\d{11}$/.test(v) || "Mobile number must be exactly 11 digits"
 };
 
 // Fetch client role ID on component mount

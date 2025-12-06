@@ -140,8 +140,12 @@
                       <v-col cols="12">
                         <h3 class="text-h6 mb-4">Personal Information</h3>
                         <v-alert type="info" variant="tonal" density="compact" class="mb-4">
-                          Personal information is automatically populated from your profile and cannot be edited here. 
-                          To update, please visit your <router-link to="/client/profile" class="text-error font-weight-bold">Profile</router-link> page.
+                          Personal information is automatically populated from your profile and
+                          cannot be edited here. To update, please visit your
+                          <router-link to="/client/profile" class="text-error font-weight-bold"
+                            >Profile</router-link
+                          >
+                          page.
                         </v-alert>
                       </v-col>
 
@@ -253,8 +257,7 @@
                           variant="outlined"
                           :rules="[
                             (v) => !!v || 'Mobile number is required',
-                            (v) =>
-                              /^[0-9+\-\s()]+$/.test(v) || 'Please enter a valid mobile number',
+                            (v) => /^\d{11}$/.test(v) || 'Mobile number must be exactly 11 digits',
                           ]"
                           required
                           readonly
@@ -406,6 +409,12 @@
                           v-model="application.businessPhone"
                           label="Business Phone"
                           variant="outlined"
+                          :rules="[
+                            (v) =>
+                              !v ||
+                              /^\d{11}$/.test(v) ||
+                              'Business phone must be exactly 11 digits',
+                          ]"
                         />
                       </v-col>
 
@@ -465,12 +474,19 @@
                           label="Loan Amount (₱)"
                           type="number"
                           variant="outlined"
-                          :hint="isFirstTimeLoan ? 'First-time borrowers are limited to ₱10,000' : 'Existing borrowers can apply up to ₱100,000'"
+                          :hint="
+                            isFirstTimeLoan
+                              ? 'First-time borrowers are limited to ₱10,000'
+                              : 'Existing borrowers can apply up to ₱100,000'
+                          "
                           persistent-hint
                           :rules="[
                             (v) => !!v || 'Loan amount is required',
                             (v) => v > 0 || 'Loan amount must be positive',
-                            (v) => isFirstTimeLoan ? v <= 10000 || 'First-time borrowers can only loan up to ₱10,000' : v <= 100000 || 'Maximum loan amount is ₱100,000'
+                            (v) =>
+                              isFirstTimeLoan
+                                ? v <= 10000 || 'First-time borrowers can only loan up to ₱10,000'
+                                : v <= 100000 || 'Maximum loan amount is ₱100,000',
                           ]"
                           required
                           @input="calculateLoanDetails"
@@ -482,7 +498,8 @@
                           density="compact"
                           class="mt-2"
                         >
-                          <strong>First-Time Borrower:</strong> As a first-time borrower, your maximum loan amount is ₱10,000.
+                          <strong>First-Time Borrower:</strong> As a first-time borrower, your
+                          maximum loan amount is ₱10,000.
                         </v-alert>
                         <v-alert
                           v-if="!isFirstTimeLoan"
@@ -515,7 +532,7 @@
                           hint="Select 50 (Short Term) or 100 (Long Term)"
                           persistent-hint
                           @update:model-value="calculateLoanDetails"
-                          :rules="[v => !!v || 'Please select payment period']"
+                          :rules="[(v) => !!v || 'Please select payment period']"
                           required
                         />
                       </v-col>
@@ -538,16 +555,26 @@
                           <v-card-text>
                             <v-row dense>
                               <v-col cols="6" md="3">
-                                <div class="text-caption text-medium-emphasis">Principal Amount</div>
-                                <div class="text-h6">₱{{ application.loanAmount?.toLocaleString() || 0 }}</div>
+                                <div class="text-caption text-medium-emphasis">
+                                  Principal Amount
+                                </div>
+                                <div class="text-h6">
+                                  ₱{{ application.loanAmount?.toLocaleString() || 0 }}
+                                </div>
                               </v-col>
                               <v-col cols="6" md="3">
                                 <div class="text-caption text-medium-emphasis">Interest (17%)</div>
-                                <div class="text-h6 text-error">₱{{ loanCalculations.interest.toLocaleString() }}</div>
+                                <div class="text-h6 text-error">
+                                  ₱{{ loanCalculations.interest.toLocaleString() }}
+                                </div>
                               </v-col>
                               <v-col cols="6" md="3">
-                                <div class="text-caption text-medium-emphasis">Loan Discharge (Daily)</div>
-                                <div class="text-h6">₱{{ loanCalculations.loanDischarge.toLocaleString() }}</div>
+                                <div class="text-caption text-medium-emphasis">
+                                  Loan Discharge (Daily)
+                                </div>
+                                <div class="text-h6">
+                                  ₱{{ loanCalculations.loanDischarge.toLocaleString() }}
+                                </div>
                               </v-col>
                               <v-col cols="6" md="3">
                                 <div class="text-caption text-medium-emphasis">Processing Fee</div>
@@ -558,20 +585,30 @@
                                 <div class="text-h6">₱45</div>
                               </v-col>
                               <v-col cols="6" md="3">
-                                <div class="text-caption text-medium-emphasis">Total Deductions</div>
-                                <div class="text-h6 text-warning">₱{{ loanCalculations.totalDeductions.toLocaleString() }}</div>
+                                <div class="text-caption text-medium-emphasis">
+                                  Total Deductions
+                                </div>
+                                <div class="text-h6 text-warning">
+                                  ₱{{ loanCalculations.totalDeductions.toLocaleString() }}
+                                </div>
                               </v-col>
                               <v-col cols="6" md="3">
                                 <div class="text-caption text-medium-emphasis">Net Proceeds</div>
-                                <div class="text-h6 text-success">₱{{ loanCalculations.netProceeds.toLocaleString() }}</div>
+                                <div class="text-h6 text-success">
+                                  ₱{{ loanCalculations.netProceeds.toLocaleString() }}
+                                </div>
                               </v-col>
                               <v-col cols="6" md="3">
                                 <div class="text-caption text-medium-emphasis">Daily Payment</div>
-                                <div class="text-h6 text-primary">₱{{ loanCalculations.dailyPayment.toLocaleString() }}</div>
+                                <div class="text-h6 text-primary">
+                                  ₱{{ loanCalculations.dailyPayment.toLocaleString() }}
+                                </div>
                               </v-col>
                               <v-col cols="6" md="3">
                                 <div class="text-caption text-medium-emphasis">Payment Period</div>
-                                <div class="text-h6 text-info">{{ loanCalculations.numberOfDays }} days</div>
+                                <div class="text-h6 text-info">
+                                  {{ loanCalculations.numberOfDays }} days
+                                </div>
                               </v-col>
                             </v-row>
                           </v-card-text>
@@ -694,7 +731,10 @@
                             @change="onFileChange($event, 'businessPermit')"
                           />
                           <v-progress-linear
-                            v-if="uploadProgress.businessPermit > 0 && uploadProgress.businessPermit < 100"
+                            v-if="
+                              uploadProgress.businessPermit > 0 &&
+                              uploadProgress.businessPermit < 100
+                            "
                             v-model="uploadProgress.businessPermit"
                             color="error"
                             class="mt-2"
@@ -813,7 +853,10 @@
                               <h4 class="text-subtitle-1 mb-2">Business Information</h4>
                               <p><strong>Business Name:</strong> {{ application.businessName }}</p>
                               <p><strong>Business Type:</strong> {{ application.businessType }}</p>
-                              <p><strong>Years in Business:</strong> {{ application.yearsInBusiness }} years</p>
+                              <p>
+                                <strong>Years in Business:</strong>
+                                {{ application.yearsInBusiness }} years
+                              </p>
                             </v-col>
                             <v-col cols="12" md="6">
                               <h4 class="text-subtitle-1 mb-2">Loan Details</h4>
@@ -828,9 +871,21 @@
                             </v-col>
                             <v-col cols="12" md="6">
                               <h4 class="text-subtitle-1 mb-2">Financial Information</h4>
-                              <p><strong>Monthly Income:</strong> ₱{{ application.monthlyIncome?.toLocaleString() }}</p>
-                              <p><strong>Monthly Expenses:</strong> ₱{{ application.monthlyExpenses?.toLocaleString() }}</p>
-                              <p><strong>Net Monthly Income:</strong> ₱{{ netIncome.toLocaleString() }}</p>
+                              <p>
+                                <strong>Monthly Income:</strong> ₱{{
+                                  application.monthlyIncome?.toLocaleString()
+                                }}
+                              </p>
+                              <p>
+                                <strong>Monthly Expenses:</strong> ₱{{
+                                  application.monthlyExpenses?.toLocaleString()
+                                }}
+                              </p>
+                              <p>
+                                <strong>Net Monthly Income:</strong> ₱{{
+                                  netIncome.toLocaleString()
+                                }}
+                              </p>
                             </v-col>
                           </v-row>
                         </v-card-text>
@@ -840,58 +895,78 @@
                     <!-- Loan Breakdown -->
                     <v-col cols="12" v-if="application.loanAmount > 0">
                       <v-card variant="outlined" class="mb-4">
-                        <v-card-title>
+                        <v-card-title class="pb-3">
                           <v-icon class="me-2" color="error">mdi-cash-multiple</v-icon>
                           Loan Breakdown
                         </v-card-title>
-                        <v-card-text>
-                          <v-row dense>
-                            <v-col cols="6" md="3">
-                              <div class="text-caption text-medium-emphasis">Principal Amount</div>
-                              <div class="text-h6">₱{{ application.loanAmount?.toLocaleString() || 0 }}</div>
+                        <v-card-text class="pt-0">
+                          <!-- Header Row -->
+                          <v-row class="loan-breakdown-header">
+                            <v-col cols="12" md="3" class="text-center py-2">
+                              <div class="text-subtitle-1 font-weight-bold text-black">
+                                Amount Borrowed
+                              </div>
                             </v-col>
-                            <v-col cols="6" md="3">
-                              <div class="text-caption text-medium-emphasis">Interest (17%)</div>
-                              <div class="text-h6 text-error">₱{{ loanCalculations.interest.toLocaleString() }}</div>
+                            <v-col cols="12" md="3" class="text-center py-2">
+                              <div class="text-subtitle-1 font-weight-bold text-black">
+                                Payable in Days
+                              </div>
                             </v-col>
-                            <v-col cols="6" md="3">
-                              <div class="text-caption text-medium-emphasis">Daily Payment</div>
-                              <div class="text-h6 text-primary">₱{{ loanCalculations.dailyPayment.toLocaleString() }}</div>
+                            <v-col cols="12" md="3" class="text-center py-2">
+                              <div class="text-subtitle-1 font-weight-bold text-black">
+                                Net Proceeds
+                              </div>
                             </v-col>
-                            <v-col cols="6" md="3">
-                              <div class="text-caption text-medium-emphasis">Payment Period</div>
-                              <div class="text-h6 text-info">{{ loanCalculations.numberOfDays }} days</div>
-                            </v-col>
-                            <v-col cols="6" md="3">
-                              <div class="text-caption text-medium-emphasis">Processing Fee</div>
-                              <div class="text-h6">₱150</div>
-                            </v-col>
-                            <v-col cols="6" md="3">
-                              <div class="text-caption text-medium-emphasis">Doc Stamp</div>
-                              <div class="text-h6">₱45</div>
-                            </v-col>
-                            <v-col cols="6" md="3">
-                              <div class="text-caption text-medium-emphasis">Total Deductions</div>
-                              <div class="text-h6 text-warning">₱{{ loanCalculations.totalDeductions.toLocaleString() }}</div>
-                            </v-col>
-                            <v-col cols="6" md="3">
-                              <div class="text-caption text-medium-emphasis">Net Proceeds</div>
-                              <div class="text-h6 text-success">₱{{ loanCalculations.netProceeds.toLocaleString() }}</div>
+                            <v-col cols="12" md="3" class="text-center py-2">
+                              <div class="text-subtitle-1 font-weight-bold text-black">
+                                Amount to be Paid
+                              </div>
                             </v-col>
                           </v-row>
 
-                          <v-divider class="my-4" />
+                          <v-divider class="my-2" />
 
-                          <v-alert type="info" variant="tonal" density="compact">
-                            <div class="d-flex align-center">
-                              <v-icon class="me-2">mdi-information</v-icon>
-                              <div>
-                                <strong>Daily Payment Plan:</strong> You will pay ₱{{ loanCalculations.dailyPayment.toLocaleString() }}
-                                per day for {{ loanCalculations.numberOfDays }} days. Total amount to be paid:
-                                ₱{{ (loanCalculations.dailyPayment * loanCalculations.numberOfDays).toLocaleString() }}
+                          <!-- Amount Row -->
+                          <v-row class="loan-breakdown-row">
+                            <v-col cols="12" md="3" class="text-center py-3">
+                              <div class="text-h5 font-weight-bold text-black">
+                                ₱{{ application.loanAmount?.toLocaleString() || 0 }}
                               </div>
-                            </div>
-                          </v-alert>
+                            </v-col>
+                            <v-col cols="12" md="3" class="text-center py-3">
+                              <div class="text-h5 font-weight-bold text-black">
+                                {{ loanCalculations.numberOfDays }}
+                              </div>
+                            </v-col>
+                            <v-col cols="12" md="3" class="text-center py-3">
+                              <div class="text-h5 font-weight-bold text-black">
+                                ₱{{ loanCalculations.netProceeds.toLocaleString() }}
+                              </div>
+                            </v-col>
+                            <v-col cols="12" md="3" class="text-center py-3">
+                              <div class="text-h5 font-weight-bold text-black">
+                                ₱{{
+                                  (
+                                    loanCalculations.dailyPayment * loanCalculations.numberOfDays
+                                  ).toLocaleString()
+                                }}
+                              </div>
+                            </v-col>
+                          </v-row>
+
+                          <v-divider class="my-2" />
+
+                          <!-- Daily Payment Row -->
+                          <v-row class="loan-breakdown-row">
+                            <v-col cols="12" class="text-center py-3">
+                              <div class="text-h6 text-black">
+                                Daily payment of
+                                <strong
+                                  >₱{{ loanCalculations.dailyPayment.toLocaleString() }}</strong
+                                >
+                              </div>
+                            </v-col>
+                          </v-row>
                         </v-card-text>
                       </v-card>
                     </v-col>
@@ -923,11 +998,18 @@
                 </v-btn>
                 <v-spacer v-else />
 
-                <v-btn v-if="currentStep < 6" color="red" @click="nextStep"> Next </v-btn>
-                <v-btn 
-                  v-else 
-                  color="red" 
-                  :loading="submitting" 
+                <v-btn
+                  v-if="currentStep < 6"
+                  color="red"
+                  @click="nextStep"
+                  :disabled="currentStep === 5 && !allRequiredFilesUploaded"
+                >
+                  Next
+                </v-btn>
+                <v-btn
+                  v-else
+                  color="red"
+                  :loading="submitting"
                   :disabled="!application.termsAccepted"
                   @click="submitApplication"
                 >
@@ -971,13 +1053,9 @@
 import { ref, computed, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useAuth } from "@/utils/useAuth";
-import {
-  useLoanApplications,
-  useChildren,
-  useUserProfile,
-} from "@/utils/useSmartLoanApi";
+import { useLoanApplications, useChildren, useUserProfile } from "@/utils/useSmartLoanApi";
 import { getCurrentUser, client } from "@/utils/useDirectus";
-import { createItem } from '@directus/sdk';
+import { createItem } from "@directus/sdk";
 
 const router = useRouter();
 const { logout } = useAuth();
@@ -1014,7 +1092,7 @@ const loanCalculations = ref({
   totalDeductions: 0,
   netProceeds: 0,
   dailyPayment: 0,
-  numberOfDays: 0
+  numberOfDays: 0,
 });
 
 // File upload tracking
@@ -1092,7 +1170,7 @@ const application = ref({
   monthlyIncome: null,
   monthlyExpenses: null,
   termDays: null,
-  
+
   // Loan calculation fields
   interestRate: 17,
   loanDischarge: 1,
@@ -1131,6 +1209,12 @@ const netIncomeColor = computed(() => {
   return "error";
 });
 
+const allRequiredFilesUploaded = computed(() => {
+  return (
+    uploadedFiles.value.validId && uploadedFiles.value.businessPermit && uploadedFiles.value.photo
+  );
+});
+
 // Calculate loan details
 const calculateLoanDetails = () => {
   const principal = application.value.loanAmount || 0;
@@ -1143,7 +1227,7 @@ const calculateLoanDetails = () => {
       totalDeductions: 0,
       netProceeds: 0,
       dailyPayment: 0,
-      numberOfDays: termDays
+      numberOfDays: termDays,
     };
     return;
   }
@@ -1167,7 +1251,7 @@ const calculateLoanDetails = () => {
     totalDeductions,
     netProceeds,
     dailyPayment,
-    numberOfDays: termDays
+    numberOfDays: termDays,
   };
 };
 
@@ -1178,49 +1262,50 @@ const calculateNetIncome = () => {
 };
 
 // Recalculate automatically when principal or termDays change
-watch([
-  () => application.value.loanAmount,
-  () => application.value.termDays
-], calculateLoanDetails, { immediate: true });
+watch(
+  [() => application.value.loanAmount, () => application.value.termDays],
+  calculateLoanDetails,
+  { immediate: true },
+);
 
 // Methods
 // Upload file to Directus
 const uploadFileToDirectus = async (file: File) => {
   const formData = new FormData();
-  formData.append('file', file);
+  formData.append("file", file);
 
-  const baseUrl = import.meta.env.VITE_DIRECTUS_URL || 'http://localhost:8055';
-  
+  const baseUrl = import.meta.env.VITE_DIRECTUS_URL || "http://localhost:8055";
+
   // Get access token from cookies
   const getAccessToken = (): string | null => {
-    const cookies = document.cookie.split(';');
+    const cookies = document.cookie.split(";");
     for (const cookie of cookies) {
-      const [name, value] = cookie.trim().split('=');
-      if (name === 'accessToken') {
+      const [name, value] = cookie.trim().split("=");
+      if (name === "accessToken") {
         return decodeURIComponent(value);
       }
     }
     return null;
   };
-  
+
   const accessToken = getAccessToken();
-  
+
   const headers: HeadersInit = {};
   if (accessToken) {
-    headers['Authorization'] = `Bearer ${accessToken}`;
+    headers["Authorization"] = `Bearer ${accessToken}`;
   }
-  
+
   const response = await fetch(`${baseUrl}/files`, {
-    method: 'POST',
+    method: "POST",
     headers: headers,
     body: formData,
-    credentials: 'include',
+    credentials: "include",
   });
 
   if (!response.ok) {
     const errorData = await response.json();
-    console.error('Upload error:', errorData);
-    throw new Error(errorData.errors?.[0]?.message || 'File upload failed');
+    console.error("Upload error:", errorData);
+    throw new Error(errorData.errors?.[0]?.message || "File upload failed");
   }
 
   const data = await response.json();
@@ -1231,18 +1316,18 @@ const uploadFileToDirectus = async (file: File) => {
 const onFileChange = async (event: Event, fieldName: string) => {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
-  
+
   if (!file) return;
 
   try {
     uploadProgress.value[fieldName] = 10;
-    
+
     // Upload to Directus
     const fileId = await uploadFileToDirectus(file);
-    
+
     uploadProgress.value[fieldName] = 100;
     uploadedFiles.value[fieldName] = fileId;
-    
+
     console.log(`${fieldName} uploaded:`, fileId);
   } catch (error) {
     console.error(`Error uploading ${fieldName}:`, error);
@@ -1256,17 +1341,17 @@ const checkExistingLoans = async (userId: string) => {
   try {
     const loans = await getApplications();
     // Filter loans for current user
-    const userLoans = loans.filter((loan: any) => 
-      loan.client === userId || 
-      (typeof loan.client === 'object' && loan.client?.id === userId)
+    const userLoans = loans.filter(
+      (loan: any) =>
+        loan.client === userId || (typeof loan.client === "object" && loan.client?.id === userId),
     );
     existingLoans.value = userLoans;
     isFirstTimeLoan.value = userLoans.length === 0;
-    
-    console.log('Existing loans:', userLoans.length);
-    console.log('Is first time loan:', isFirstTimeLoan.value);
+
+    console.log("Existing loans:", userLoans.length);
+    console.log("Is first time loan:", isFirstTimeLoan.value);
   } catch (error) {
-    console.error('Error checking existing loans:', error);
+    console.error("Error checking existing loans:", error);
     // Default to first time loan if there's an error
     isFirstTimeLoan.value = true;
   }
@@ -1307,6 +1392,15 @@ const nextStep = async () => {
       if (financialForm.value) {
         const { valid } = await financialForm.value.validate();
         isValid = valid;
+      }
+      break;
+    case 5:
+      // Check if all required files are uploaded
+      isValid = allRequiredFilesUploaded.value;
+      if (!isValid) {
+        alert(
+          "Please upload all required documents (Valid ID, Business Permit, and Photo) before proceeding.",
+        );
       }
       break;
   }
@@ -1360,7 +1454,7 @@ const submitApplication = async () => {
       term_days: application.value.termDays || null,
       status: "pending",
       application_date: new Date().toISOString().split("T")[0], // Date only
-      
+
       // Loan calculation fields
       interest_rate: application.value.interestRate,
       loan_discharge: application.value.loanDischarge,
@@ -1390,7 +1484,7 @@ const submitApplication = async () => {
 
     // Create the loan application
     const createdApplication = await createApplication(loanData);
-    
+
     console.log("Loan created successfully:", createdApplication);
     console.log("Loan ID:", createdApplication?.id);
 
@@ -1411,78 +1505,73 @@ const submitApplication = async () => {
     // Handle file uploads for requirements
     // Create loan_requirments records for uploaded files (note: typo in collection name)
     // Note: This may fail if user doesn't have permission - that's okay
-    if (uploadedFiles.value.validId || uploadedFiles.value.businessPermit || 
-        uploadedFiles.value.photo || uploadedFiles.value.coMakerId) {
-      
+    if (
+      uploadedFiles.value.validId ||
+      uploadedFiles.value.businessPermit ||
+      uploadedFiles.value.photo ||
+      uploadedFiles.value.coMakerId
+    ) {
       // Ensure we have a valid loan ID
       if (!createdApplication || !createdApplication.id) {
-        console.error('No loan ID returned from createApplication');
-        throw new Error('Failed to create loan application');
+        console.error("No loan ID returned from createApplication");
+        throw new Error("Failed to create loan application");
       }
 
       const loanId = createdApplication.id;
-      console.log('Creating loan requirements for loan ID:', loanId);
-      
+      console.log("Creating loan requirements for loan ID:", loanId);
+
       try {
         const requirementPromises = [];
-        
+
         if (uploadedFiles.value.validId) {
           const requirementData = {
             loan: loanId,
-            requirement_type: 'valid_id',
+            requirement_type: "valid_id",
             file: uploadedFiles.value.validId,
           };
-          console.log('Creating valid_id requirement:', requirementData);
-          requirementPromises.push(
-            client.request(createItem('loan_requirments', requirementData))
-          );
+          console.log("Creating valid_id requirement:", requirementData);
+          requirementPromises.push(client.request(createItem("loan_requirments", requirementData)));
         }
-        
+
         if (uploadedFiles.value.businessPermit) {
           const requirementData = {
             loan: loanId,
-            requirement_type: 'permit',
+            requirement_type: "permit",
             file: uploadedFiles.value.businessPermit,
           };
-          console.log('Creating permit requirement:', requirementData);
-          requirementPromises.push(
-            client.request(createItem('loan_requirments', requirementData))
-          );
+          console.log("Creating permit requirement:", requirementData);
+          requirementPromises.push(client.request(createItem("loan_requirments", requirementData)));
         }
-        
+
         if (uploadedFiles.value.photo) {
           const requirementData = {
             loan: loanId,
-            requirement_type: 'photo',
+            requirement_type: "photo",
             file: uploadedFiles.value.photo,
           };
-          console.log('Creating photo requirement:', requirementData);
-          requirementPromises.push(
-            client.request(createItem('loan_requirments', requirementData))
-          );
+          console.log("Creating photo requirement:", requirementData);
+          requirementPromises.push(client.request(createItem("loan_requirments", requirementData)));
         }
-        
+
         if (uploadedFiles.value.coMakerId) {
           const requirementData = {
             loan: loanId,
-            requirement_type: 'co-maker_id',
+            requirement_type: "co-maker_id",
             file: uploadedFiles.value.coMakerId,
           };
-          console.log('Creating co-maker_id requirement:', requirementData);
-          requirementPromises.push(
-            client.request(createItem('loan_requirments', requirementData))
-          );
+          console.log("Creating co-maker_id requirement:", requirementData);
+          requirementPromises.push(client.request(createItem("loan_requirments", requirementData)));
         }
-        
+
         await Promise.all(requirementPromises);
-        console.log('✅ All loan requirements saved successfully');
+        console.log("✅ All loan requirements saved successfully");
       } catch (requirementError) {
         // Log detailed error
-        console.error('❌ Error creating loan requirements:', requirementError);
-        console.error('Error details:', JSON.stringify(requirementError, null, 2));
-        console.log('Files were uploaded successfully. Admin will need to link them manually.');
-        console.log('Uploaded file IDs:', uploadedFiles.value);
-        console.log('Loan ID:', loanId);
+        console.error("❌ Error creating loan requirements:", requirementError);
+        console.error("Error details:", JSON.stringify(requirementError, null, 2));
+        console.log("Files were uploaded successfully. Admin will need to link them manually.");
+        console.log("Uploaded file IDs:", uploadedFiles.value);
+        console.log("Loan ID:", loanId);
       }
     }
 
@@ -1570,6 +1659,23 @@ onMounted(async () => {
 :deep(.v-list-item--active) {
   background-color: rgba(255, 255, 255, 0.1);
   border-radius: 8px;
+}
+
+/* Loan Breakdown Styling */
+.loan-breakdown-header {
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.loan-breakdown-row {
+  background-color: #fafafa;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.text-black {
+  color: #000000 !important;
 }
 
 @media (max-width: 1263px) {

@@ -240,7 +240,10 @@
                         label="Mobile Number"
                         variant="outlined"
                         :readonly="!editMode"
-                        :rules="[v => !!v || 'Mobile number is required']"
+                        :rules="[
+                          v => !!v || 'Mobile number is required',
+                          v => /^\d{11}$/.test(v) || 'Mobile number must be exactly 11 digits'
+                        ]"
                       />
                     </v-col>
                     <v-col cols="12">
