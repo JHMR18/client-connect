@@ -165,27 +165,13 @@
             {{ item.civil_status || 'N/A' }}
           </template>
 
-          <template #item.actions="{ item }">
+<template #item.actions="{ item }">
             <v-btn
               icon="mdi-eye"
               size="small"
               variant="text"
               color="grey-darken-2"
               @click="viewClient(item)"
-            />
-            <v-btn
-              icon="mdi-pencil"
-              size="small"
-              variant="text"
-              color="grey-darken-1"
-              @click="editClient(item)"
-            />
-            <v-btn
-              icon="mdi-delete"
-              size="small"
-              variant="text"
-              color="error"
-              @click="deleteClient(item)"
             />
           </template>
 
@@ -210,13 +196,55 @@
         <v-card>
           <v-card-title class="d-flex align-center justify-space-between bg-error pa-4">
             <span class="text-h5 text-white">
-              {{ dialogMode === 'view' ? 'Client Details' : dialogMode === 'edit' ? 'Edit Client' : 'Add New Client' }}
+              {{ dialogMode === 'view' ? 'Client Loan Breakdown' : dialogMode === 'edit' ? 'Edit Client' : 'Add New Client' }}
             </span>
             <v-btn icon="mdi-close" variant="text" color="white" @click="closeDialog" />
           </v-card-title>
 
           <v-card-text class="pa-6">
-            <v-form ref="clientForm" v-if="selectedClient">
+            <!-- Loan Breakdown Table (View Mode) -->
+            <div v-if="dialogMode === 'view'">
+              <div class="mb-4">
+                <h3 class="text-h6 font-weight-bold">{{ getFullName(selectedClient!) }}</h3>
+                <p class="text-body-2 text-medium-emphasis">Loan History & Status</p>
+              </div>
+              
+              <v-data-table
+                :headers="loanHeaders"
+                :items="clientLoans"
+                :loading="loansLoading"
+                density="compact"
+                class="elevation-1"
+              >
+                <template #item.principal_amount="{ item }">
+                  ₱{{ item.principal_amount?.toLocaleString() }}
+                </template>
+                
+                <template #item.application_date="{ item }">
+                  {{ formatDate(item.application_date) }}
+                </template>
+
+                <template #item.status="{ item }">
+                  <v-chip
+                    :color="getLoanStatusColor(item.status)"
+                    size="small"
+                    variant="flat"
+                    class="text-caption"
+                  >
+                    {{ item.status }}
+                  </v-chip>
+                </template>
+                
+                <template #no-data>
+                  <div class="text-center py-4">
+                    <p class="text-body-2 text-medium-emphasis">No loans found for this client.</p>
+                  </div>
+                </template>
+              </v-data-table>
+            </div>
+
+            <!-- Client Form (Edit/Create Mode) -->
+            <v-form ref="clientForm" v-else-if="selectedClient">
               <v-row>
                 <!-- Personal Information -->
                 <v-col cols="12">
@@ -229,7 +257,6 @@
                     v-model="selectedClient.first_name"
                     label="First Name"
                     variant="outlined"
-                    :readonly="dialogMode === 'view'"
                     :rules="[rules.required]"
                     density="comfortable"
                   />
@@ -239,7 +266,6 @@
                     v-model="selectedClient.middle_name"
                     label="Middle Name"
                     variant="outlined"
-                    :readonly="dialogMode === 'view'"
                     density="comfortable"
                   />
                 </v-col>
@@ -248,7 +274,6 @@
                     v-model="selectedClient.last_name"
                     label="Last Name"
                     variant="outlined"
-                    :readonly="dialogMode === 'view'"
                     :rules="[rules.required]"
                     density="comfortable"
                   />
@@ -259,7 +284,6 @@
                     v-model="selectedClient.nickname"
                     label="Nickname"
                     variant="outlined"
-                    :readonly="dialogMode === 'view'"
                     density="comfortable"
                   />
                 </v-col>
@@ -270,7 +294,6 @@
                     label="Date of Birth"
                     type="date"
                     variant="outlined"
-                    :readonly="dialogMode === 'view'"
                     density="comfortable"
                   />
                 </v-col>
@@ -281,7 +304,6 @@
                     label="Gender"
                     :items="['Male', 'Female', 'Other']"
                     variant="outlined"
-                    :readonly="dialogMode === 'view'"
                     density="comfortable"
                   />
                 </v-col>
@@ -292,7 +314,6 @@
                     label="Civil Status"
                     :items="['Single', 'Married', 'Widowed', 'Separated', 'Divorced']"
                     variant="outlined"
-                    :readonly="dialogMode === 'view'"
                     density="comfortable"
                   />
                 </v-col>
@@ -302,7 +323,6 @@
                     v-model="selectedClient.citizenship"
                     label="Citizenship"
                     variant="outlined"
-                    :readonly="dialogMode === 'view'"
                     density="comfortable"
                   />
                 </v-col>
@@ -312,7 +332,6 @@
                     v-model="selectedClient.spouse_name"
                     label="Spouse Name"
                     variant="outlined"
-                    :readonly="dialogMode === 'view'"
                     density="comfortable"
                   />
                 </v-col>
@@ -329,7 +348,6 @@
                     label="Email Address"
                     type="email"
                     variant="outlined"
-                    :readonly="dialogMode === 'view'"
                     :rules="[rules.required, rules.email]"
                     density="comfortable"
                   />
@@ -340,7 +358,6 @@
                     v-model="selectedClient.mobile_number"
                     label="Mobile Number"
                     variant="outlined"
-                    :readonly="dialogMode === 'view'"
                     density="comfortable"
                   />
                 </v-col>
@@ -350,7 +367,6 @@
                     v-model="selectedClient.present_address"
                     label="Present Address"
                     variant="outlined"
-                    :readonly="dialogMode === 'view'"
                     rows="2"
                     density="comfortable"
                   />
@@ -361,7 +377,6 @@
                     v-model="selectedClient.employment_address"
                     label="Employment Address"
                     variant="outlined"
-                    :readonly="dialogMode === 'view'"
                     rows="2"
                     density="comfortable"
                   />
@@ -372,7 +387,6 @@
                     v-model="selectedClient.previous_address"
                     label="Previous Address"
                     variant="outlined"
-                    :readonly="dialogMode === 'view'"
                     rows="2"
                     density="comfortable"
                   />
@@ -390,7 +404,6 @@
                     label="Status"
                     :items="['active', 'inactive', 'draft', 'suspended']"
                     variant="outlined"
-                    :readonly="dialogMode === 'view'"
                     density="comfortable"
                   />
                 </v-col>
@@ -430,16 +443,7 @@
           <v-card-actions class="pa-4">
             <v-spacer />
             <v-btn variant="text" @click="closeDialog">
-              {{ dialogMode === 'view' ? 'Close' : 'Cancel' }}
-            </v-btn>
-            <v-btn
-              v-if="dialogMode === 'view'"
-              color="grey-darken-2"
-              variant="flat"
-              @click="dialogMode = 'edit'"
-            >
-              <v-icon start>mdi-pencil</v-icon>
-              Edit
+              Close
             </v-btn>
             <v-btn
               v-if="dialogMode !== 'view'"
@@ -503,7 +507,7 @@
 import { ref, computed, onMounted } from "vue";
 import AdminLayout from "@/layouts/AdminLayout.vue";
 import { client } from "@/utils/useDirectus";
-import { readUsers, createUser, updateUser, deleteUser, readRoles } from "@directus/sdk";
+import { readUsers, createUser, updateUser, deleteUser, readRoles, readItems } from "@directus/sdk";
 
 interface Client {
   id: string;
@@ -540,6 +544,8 @@ const dialogMode = ref<"view" | "edit" | "create">("view");
 const selectedClient = ref<Client | null>(null);
 const clientForm = ref();
 const saving = ref(false);
+const clientLoans = ref<any[]>([]);
+const loansLoading = ref(false);
 
 const deleteDialog = ref(false);
 const clientToDelete = ref<Client | null>(null);
@@ -557,6 +563,13 @@ const headers = [
   { title: "Status", key: "status", sortable: true },
   { title: "Actions", key: "actions", sortable: false, align: "center" }
 ];
+
+const loanHeaders = [
+  { title: 'Loan ID', key: 'id' },
+  { title: 'Amount', key: 'principal_amount' },
+  { title: 'Status', key: 'status' },
+  { title: 'Application Date', key: 'application_date' }
+]
 
 const rules = {
   required: (v: string) => !!v || "This field is required",
@@ -659,12 +672,38 @@ const fetchClients = async () => {
   }
 };
 
-const getFullName = (client: Client) => {
+const fetchClientLoans = async (clientId: string) => {
+  loansLoading.value = true
+  clientLoans.value = []
+  try {
+    const response = await client.request(
+      readItems('loan', {
+        filter: {
+          client: {
+             _eq: clientId
+          }
+        },
+        sort: ['-application_date'],
+        fields: ['id', 'principal_amount', 'status', 'application_date']
+      })
+    )
+    clientLoans.value = response
+  } catch (error) {
+    console.error('Error fetching client loans:', error)
+    showSnackbar('Failed to fetch client loans', 'error')
+  } finally {
+    loansLoading.value = false
+  }
+}
+
+const getFullName = (client: Client | null) => {
+  if (!client) return "";
   const parts = [client.first_name, client.middle_name, client.last_name].filter(Boolean);
   return parts.join(" ");
 };
 
-const getInitials = (client: Client) => {
+const getInitials = (client: Client | null) => {
+  if (!client) return "";
   return `${client.first_name?.[0] || ""}${client.last_name?.[0] || ""}`.toUpperCase();
 };
 
@@ -677,6 +716,18 @@ const getStatusColor = (status: string) => {
   };
   return colors[status.toLowerCase()] || "grey";
 };
+
+const getLoanStatusColor = (status: string) => {
+  const colors: Record<string, string> = {
+    active: 'success',
+    pending: 'warning',
+    approved: 'info',
+    rejected: 'error',
+    closed: 'grey',
+    restructured: 'purple'
+  }
+  return colors[status?.toLowerCase()] || 'grey'
+}
 
 const formatDate = (date?: string) => {
   if (!date) return "N/A";
@@ -696,10 +747,11 @@ const openCreateDialog = () => {
   dialog.value = true;
 };
 
-const viewClient = (client: Client) => {
+const viewClient = async (client: Client) => {
   dialogMode.value = "view";
   selectedClient.value = { ...client };
   dialog.value = true;
+  await fetchClientLoans(client.id);
 };
 
 const editClient = (client: Client) => {
@@ -712,6 +764,7 @@ const closeDialog = () => {
   dialog.value = false;
   selectedClient.value = null;
   dialogMode.value = "view";
+  clientLoans.value = [];
 };
 
 const saveClient = async () => {

@@ -69,7 +69,13 @@ export const refreshToken = async (): Promise<boolean> => {
 
     return false;
   } catch (error) {
-    console.error("Token refresh failed:", error);
+    console.warn("Token refresh failed, clearing session:", error);
+    // If refresh fails (e.g. expired refresh token), clear everything to force re-login
+    setAccessToken(""); // Clear cookie
+    sessionStorage.removeItem("refresh_token");
+    sessionStorage.removeItem("access_token");
+    sessionStorage.removeItem("token_expiry");
+    sessionStorage.removeItem("userData");
     return false;
   }
 };

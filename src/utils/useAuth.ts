@@ -70,6 +70,7 @@ export function useAuth() {
       if (shouldRefreshToken()) {
         const refreshed = await refreshToken();
         if (!refreshed) {
+          // If refresh failed, we must log out to prevent infinite loops or broken state
           await logout();
           return false;
         }
