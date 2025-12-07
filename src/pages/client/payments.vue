@@ -484,7 +484,9 @@ const totalPaid = computed(() => {
 })
 
 const remainingBalance = computed(() => {
-  return totalAmountDue.value - totalPaid.value
+  if (!selectedLoan.value) return 0
+  const principal = selectedLoan.value.principal_amount || 0
+  return principal - totalPaid.value
 })
 
 // Generate amortization schedule based on loan details
