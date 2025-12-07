@@ -187,7 +187,7 @@
                   </v-card-title>
                   <v-divider />
                   <v-card-text>
-                    <div style="height: 250px;">
+                    <div style="height: 400px;">
                       <LoanStatusChart v-if="loanStatusData" :data="loanStatusData" />
                       <div v-else class="d-flex align-center justify-center h-100">
                         <v-progress-circular indeterminate color="primary"></v-progress-circular>
@@ -242,43 +242,6 @@
 
           <v-col cols="12" lg="4">
             <v-row>
-              <!-- Payment Completion Rate -->
-              <v-col cols="12">
-                <v-card>
-                  <v-card-title class="d-flex align-center">
-                    <v-icon class="me-2">mdi-chart-donut</v-icon>
-                    Payment Performance
-                  </v-card-title>
-                  <v-divider />
-                  <v-card-text>
-                    <div class="text-center py-4">
-                      <div style="position: relative; display: inline-block;">
-                        <v-progress-circular
-                          :model-value="paymentCompletionRate"
-                          :size="120"
-                          :width="12"
-                          color="success"
-                          class="progress-ring"
-                        >
-                          <div class="text-center">
-                            <div class="text-h4 font-weight-bold">{{ paymentCompletionRate }}%</div>
-                            <div class="text-caption text-medium-emphasis">Complete</div>
-                          </div>
-                        </v-progress-circular>
-                      </div>
-                      <div class="mt-4">
-                        <div class="text-subtitle-2">Payment Summary</div>
-                        <div class="text-body-2 text-medium-emphasis">
-                          {{ onTimePayments }} on-time payments
-                        </div>
-                        <div class="text-body-2 text-medium-emphasis">
-                          {{ totalPayments }} total payments
-                        </div>
-                      </div>
-                    </div>
-                  </v-card-text>
-                </v-card>
-              </v-col>
 
               <!-- Upcoming Payments -->
               <v-col cols="12">

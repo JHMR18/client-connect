@@ -211,6 +211,39 @@ import { ref, onMounted, nextTick } from 'vue'
 import AdminLayout from '@/layouts/AdminLayout.vue'
 import { client } from '@/utils/useDirectus'
 import { readItems } from '@directus/sdk'
+import {
+  Chart,
+  LineController,
+  BarController,
+  DoughnutController,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+} from 'chart.js'
+
+// Register Chart.js components
+Chart.register(
+  LineController,
+  BarController,
+  DoughnutController,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  BarElement,
+  ArcElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+)
 
 // Data refs
 const loading = ref(false)
@@ -236,12 +269,11 @@ const dailyPerformanceChart = ref<HTMLCanvasElement>()
 const loanStatuses = ref([
   { name: 'Active', count: 0 },
   { name: 'Pending', count: 0 },
-  { name: 'Approved', count: 0 },
   { name: 'Completed', count: 0 },
-  { name: 'Overdue', count: 0 }
+  { name: 'Rejected', count: 0 }
 ])
 
-const statusColors = ['#424242', '#757575', '#9E9E9E', '#BDBDBD', '#EF5350']
+const statusColors = ['#424242', '#757575', '#BDBDBD', '#EF5350']
 
 const topClients = ref<any[]>([])
 
@@ -256,9 +288,9 @@ const activityHeaders = [
 const recentActivity = ref<any[]>([])
 
 // Chart instances
-let collectionsChartInstance: any = null
-let statusChartInstance: any = null
-let dailyPerformanceChartInstance: any = null
+let collectionsChartInstance: Chart | null = null
+let statusChartInstance: Chart | null = null
+let dailyPerformanceChartInstance: Chart | null = null
 
 // Helper functions
 const formatDate = (date: string | Date) => {
@@ -303,156 +335,176 @@ const getStatusColor = (status: string) => {
   return colors[status] || 'grey'
 }
 
-// Initialize charts
-const initializeCharts = () => {
+// Initialize charts with real data
+const initializeCharts = (monthlyData: any, dailyData: any) => {
+  console.log('🎨 Initializing admin charts...')
+  
   // Monthly Collections Chart
   if (collectionsChart.value) {
-    const ctx = collectionsChart.value.getContext('2d')
-    if (ctx) {
-      // Destroy existing chart if it exists
-      if (collectionsChartInstance) {
-        collectionsChartInstance.destroy()
-      }
+    if (collectionsChartInstance) {
+      collectionsChartInstance.destroy()
+    }
 
-      collectionsChartInstance = createChart(ctx, {
-        type: 'line',
-        data: {
-          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-          datasets: [{
-            label: 'Collections',
-            data: [120000, 145000, 165000, 180000, 195000, 210000],
-            borderColor: '#EF5350',
-            backgroundColor: 'rgba(239, 83, 80, 0.1)',
-            tension: 0.4,
-            fill: true
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false }
-          },
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: {
-                callback: (value) => '₱' + value.toLocaleString()
+    collectionsChartInstance = new Chart(collectionsChart.value, {
+      type: 'line',
+      data: {
+        labels: monthlyData.labels,
+        datasets: [{
+          label: 'Collections',
+          data: monthlyData.data,
+          borderColor: '#EF5350',
+          backgroundColor: 'rgba(239, 83, 80, 0.1)',
+          tension: 0.4,
+          fill: true,
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            titleColor: '#1a1a1a',
+            bodyColor: '#666',
+            borderColor: '#e0e0e0',
+            borderWidth: 1,
+            callbacks: {
+              label: (context) => {
+                return '₱' + context.parsed.y.toLocaleString('en-PH', {
+                  minimumFractionDigits: 2
+                })
               }
             }
           }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: (value) => '₱' + Number(value).toLocaleString()
+            }
+          }
         }
-      })
-    }
+      }
+    })
+    console.log('✅ Monthly collections chart created')
   }
 
   // Status Distribution Chart
   if (statusChart.value) {
-    const ctx = statusChart.value.getContext('2d')
-    if (ctx) {
-      if (statusChartInstance) {
-        statusChartInstance.destroy()
-      }
-
-      statusChartInstance = createChart(ctx, {
-        type: 'doughnut',
-        data: {
-          labels: loanStatuses.value.map(s => s.name),
-          datasets: [{
-            data: loanStatuses.value.map(s => s.count),
-            backgroundColor: statusColors,
-            borderWidth: 0
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false }
-          }
-        }
-      })
+    if (statusChartInstance) {
+      statusChartInstance.destroy()
     }
+
+    statusChartInstance = new Chart(statusChart.value, {
+      type: 'doughnut',
+      data: {
+        labels: loanStatuses.value.map(s => s.name),
+        datasets: [{
+          data: loanStatuses.value.map(s => s.count),
+          backgroundColor: statusColors,
+          borderWidth: 2,
+          borderColor: '#fff'
+        }]
+      },
+      options: {
+        responsive: false,
+        maintainAspectRatio: true,
+        aspectRatio: 1,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            titleColor: '#1a1a1a',
+            bodyColor: '#666',
+            borderColor: '#e0e0e0',
+            borderWidth: 1
+          }
+        },
+        cutout: '60%',
+        animation: {
+          duration: 750
+        }
+      }
+    })
+    console.log('✅ Status distribution chart created')
   }
 
   // Daily Performance Chart
   if (dailyPerformanceChart.value) {
-    const ctx = dailyPerformanceChart.value.getContext('2d')
-    if (ctx) {
-      if (dailyPerformanceChartInstance) {
-        dailyPerformanceChartInstance.destroy()
-      }
+    if (dailyPerformanceChartInstance) {
+      dailyPerformanceChartInstance.destroy()
+    }
 
-      dailyPerformanceChartInstance = createChart(ctx, {
-        type: 'bar',
-        data: {
-          labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-          datasets: [{
-            label: 'Payments',
-            data: [45, 52, 38, 65, 48, 25, 15],
-            backgroundColor: '#616161',
-            borderRadius: 4
-          }]
+    dailyPerformanceChartInstance = new Chart(dailyPerformanceChart.value, {
+      type: 'bar',
+      data: {
+        labels: dailyData.labels,
+        datasets: [{
+          label: 'Payments',
+          data: dailyData.data,
+          backgroundColor: '#616161',
+          borderRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            titleColor: '#1a1a1a',
+            bodyColor: '#666',
+            borderColor: '#e0e0e0',
+            borderWidth: 1,
+            callbacks: {
+              label: (context) => {
+                return context.parsed.y + ' payment' + (context.parsed.y !== 1 ? 's' : '')
+              }
+            }
+          }
         },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false }
-          },
-          scales: {
-            y: {
-              beginAtZero: true
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              stepSize: 1
             }
           }
         }
-      })
-    }
-  }
-}
-
-// Simple chart creation function (for demonstration)
-const createChart = (ctx: any, config: any) => {
-  // This is a simplified chart implementation
-  // In a real app, you'd use a proper charting library like Chart.js
-  const canvas = ctx.canvas
-  const rect = canvas.getBoundingClientRect()
-  canvas.width = rect.width
-  canvas.height = rect.height || 150
-
-  // Clear canvas
-  ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-  // Draw placeholder chart content
-  ctx.fillStyle = '#E0E0E0'
-  ctx.font = '14px Arial'
-  ctx.textAlign = 'center'
-  ctx.fillText('Chart Visualization', canvas.width / 2, canvas.height / 2)
-  ctx.fillText('(Chart library integration needed)', canvas.width / 2, canvas.height / 2 + 20)
-
-  return {
-    destroy: () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
-    }
+      }
+    })
+    console.log('✅ Daily performance chart created')
   }
 }
 
 // Load dashboard data
 const loadDashboardData = async () => {
   loading.value = true
+  console.log('🔵 === ADMIN DASHBOARD LOADING STARTED ===')
+  
   try {
-    // Load loans data
+    // Load all loans
+    console.log('📊 Fetching loans...')
     const loans = await client.request(
       readItems('loan', {
-        fields: ['*', 'client.*'],
-        limit: 100
+        fields: ['*', 'client.first_name', 'client.last_name', 'client.id'],
+        limit: -1
       })
     )
+    console.log('✅ Fetched loans:', loans.length)
 
-    // Calculate metrics
-    totalActiveLoans.value = loans.filter(l => l.status === 'active').length
+    // Calculate basic metrics
+    totalActiveLoans.value = loans.filter(l => l.status === 'active' || l.status === 'approved').length
     totalLoanPortfolio.value = loans.reduce((sum, loan) => sum + (loan.principal_amount || 0), 0)
     pendingApplications.value = loans.filter(l => l.status === 'pending').length
+
+    console.log('📊 Active loans:', totalActiveLoans.value)
+    console.log('💰 Total portfolio:', totalLoanPortfolio.value)
+    console.log('⏳ Pending:', pendingApplications.value)
 
     // Calculate status distribution
     const statusCounts: Record<string, number> = {}
@@ -461,12 +513,12 @@ const loadDashboardData = async () => {
     })
 
     loanStatuses.value = [
-      { name: 'Active', count: statusCounts.active || 0 },
+      { name: 'Active', count: (statusCounts.active || 0) + (statusCounts.approved || 0) },
       { name: 'Pending', count: statusCounts.pending || 0 },
-      { name: 'Approved', count: statusCounts.approved || 0 },
-      { name: 'Completed', count: statusCounts.completed || 0 },
-      { name: 'Overdue', count: statusCounts.overdue || 0 }
+      { name: 'Completed', count: statusCounts.closed || 0 },
+      { name: 'Rejected', count: statusCounts.rejected || 0 }
     ]
+    console.log('📊 Status distribution:', loanStatuses.value)
 
     // Get top clients
     topClients.value = loans
@@ -474,50 +526,137 @@ const loadDashboardData = async () => {
       .slice(0, 5)
       .map(loan => ({
         id: loan.id,
-        name: `${loan.client?.first_name || 'Unknown'} ${loan.client?.last_name || ''}`,
+        name: `${loan.client?.first_name || 'Unknown'} ${loan.client?.last_name || ''}`.trim() || 'Unknown Client',
         amount: loan.principal_amount || 0,
         loanDays: loan.term_days || 0
       }))
+    console.log('👥 Top clients:', topClients.value.length)
 
-    // Load payments data for activity
+    // Load payments for charts and metrics
+    console.log('💳 Fetching payments...')
     const payments = await client.request(
       readItems('payments', {
-        fields: ['*', 'loan.client.*'],
+        fields: ['*', 'loan.client.first_name', 'loan.client.last_name'],
         sort: ['-payment_date'],
-        limit: 10
+        limit: 100
       })
     )
+    console.log('✅ Fetched payments:', payments.length)
+
+    // Generate monthly collections data (last 6 months)
+    const monthlyData: Record<string, number> = {}
+    const now = new Date()
+    
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const key = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+      monthlyData[key] = 0
+    }
+
+    payments.forEach(payment => {
+      const paymentDate = new Date(payment.payment_date)
+      const key = paymentDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+      if (monthlyData.hasOwnProperty(key)) {
+        monthlyData[key] += payment.amount_paid || 0
+      }
+    })
+
+    totalMonthlyCollections.value = Object.values(monthlyData).reduce((sum, val) => sum + val, 0)
+    console.log('💵 Monthly collections:', monthlyData)
+
+    // Generate daily payment data (last 7 days)
+    const dailyData: Record<string, number> = {}
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+    
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(now)
+      date.setDate(date.getDate() - i)
+      const dayName = days[date.getDay()]
+      dailyData[dayName] = 0
+    }
+
+    payments.forEach(payment => {
+      const paymentDate = new Date(payment.payment_date)
+      const daysDiff = Math.floor((now.getTime() - paymentDate.getTime()) / (1000 * 60 * 60 * 24))
+      
+      if (daysDiff >= 0 && daysDiff < 7) {
+        const dayName = days[paymentDate.getDay()]
+        dailyData[dayName]++
+      }
+    })
+    console.log('📅 Daily payments:', dailyData)
+
+    // Calculate overdue info from amortization schedule
+    console.log('⚠️ Fetching overdue schedules...')
+    try {
+      const overdueSchedules = await client.request(
+        readItems('amortization_schedule', {
+          filter: {
+            status: { _eq: 'overdue' }
+          },
+          fields: ['amount_due']
+        })
+      )
+      
+      overdueCount.value = overdueSchedules.length
+      overdueAmount.value = overdueSchedules.reduce((sum, s) => sum + (s.amount_due || 0), 0)
+      console.log('⚠️ Overdue count:', overdueCount.value, 'Amount:', overdueAmount.value)
+    } catch (err) {
+      console.error('Error fetching overdue:', err)
+      overdueCount.value = 0
+      overdueAmount.value = 0
+    }
+
+    // Calculate total unique clients
+    const uniqueClients = new Set(loans.map(l => l.client?.id).filter(id => id))
+    totalClients.value = uniqueClients.size
+    console.log('👥 Total clients:', totalClients.value)
+
+    // Calculate new clients this month (mock for now - would need user creation dates)
+    newClientsThisMonth.value = Math.floor(totalClients.value * 0.1)
+    
+    // Calculate monthly growth (mock calculation)
+    monthlyGrowth.value = totalMonthlyCollections.value > 0 ? 12.5 : 0
 
     // Create recent activity
     recentActivity.value = [
       ...loans.slice(0, 5).map(loan => ({
         type: 'Application',
-        client: `${loan.client?.first_name || 'Unknown'} ${loan.client?.last_name || ''}`,
+        client: `${loan.client?.first_name || 'Unknown'} ${loan.client?.last_name || ''}`.trim() || 'Unknown Client',
         amount: loan.principal_amount,
         status: loan.status,
         date: loan.application_date
       })),
       ...payments.slice(0, 5).map(payment => ({
         type: 'Payment',
-        client: `${payment.loan?.client?.first_name || 'Unknown'} ${payment.loan?.client?.last_name || ''}`,
+        client: `${payment.loan?.client?.first_name || 'Unknown'} ${payment.loan?.client?.last_name || ''}`.trim() || 'Unknown Client',
         amount: payment.amount_paid,
         status: 'completed',
         date: payment.payment_date
       }))
-    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 10)
 
-    // Calculate additional metrics (mock data for now)
-    totalClients.value = new Set(loans.map(l => l.client?.id)).size
-    newClientsThisMonth.value = 8
-    monthlyGrowth.value = 12.5
-    overdueCount.value = 15
-    overdueAmount.value = 45000
-    totalMonthlyCollections.value = 210000
+    console.log('📋 Recent activity:', recentActivity.value.length, 'items')
 
     lastUpdated.value = new Date().toLocaleTimeString()
 
+    // Initialize charts with real data
+    await nextTick()
+    initializeCharts(
+      {
+        labels: Object.keys(monthlyData),
+        data: Object.values(monthlyData)
+      },
+      {
+        labels: Object.keys(dailyData),
+        data: Object.values(dailyData)
+      }
+    )
+
+    console.log('✅ === ADMIN DASHBOARD LOADING COMPLETED ===')
+
   } catch (error) {
-    console.error('Error loading dashboard data:', error)
+    console.error('❌ Error loading dashboard data:', error)
   } finally {
     loading.value = false
   }
@@ -525,8 +664,6 @@ const loadDashboardData = async () => {
 
 onMounted(async () => {
   await loadDashboardData()
-  await nextTick()
-  initializeCharts()
 })
 </script>
 
@@ -544,6 +681,11 @@ onMounted(async () => {
   background: white;
 }
 
+.chart-wrapper {
+  max-width: 100%;
+  margin: 0 auto;
+}
+
 .status-dot {
   width: 12px;
   height: 12px;
@@ -556,6 +698,6 @@ onMounted(async () => {
 
 canvas {
   max-width: 100%;
-  height: auto;
+  height: auto !important;
 }
 </style>
