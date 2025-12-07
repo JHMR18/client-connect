@@ -304,11 +304,18 @@
               item-value="id"
               class="elevation-0"
               :row-class="getRowClass"
+              :items-per-page="15"
             >
-              <!-- Period (Day #) -->
-              <template #item.period="{ item }">
+    
+              <!-- Due Date -->
+              <template #item.due_date="{ item }">
                 <div class="d-flex align-center">
-                  <span class="font-weight-medium">Day {{ item.period }}</span>
+                  <div>
+                    {{ formatDate(item.due_date) }}
+                    <div class="text-caption" :class="item.is_weekend ? 'text-orange' : 'text-medium-emphasis'">
+                      {{ getDayName(item.due_date) }}
+                    </div>
+                  </div>
                   <v-chip
                     v-if="item.is_weekend"
                     size="x-small"
@@ -318,16 +325,6 @@
                   >
                     Weekend
                   </v-chip>
-                </div>
-              </template>
-
-              <!-- Due Date -->
-              <template #item.due_date="{ item }">
-                <div>
-                  {{ formatDate(item.due_date) }}
-                  <div class="text-caption" :class="item.is_weekend ? 'text-orange' : 'text-medium-emphasis'">
-                    {{ getDayName(item.due_date) }}
-                  </div>
                 </div>
               </template>
 
@@ -351,6 +348,24 @@
                 <v-chip :color="getScheduleStatusColor(item.status)" size="small" variant="flat">
                   {{ item.status }}
                 </v-chip>
+              </template>
+
+              <!-- Bottom slot for 15-day total -->
+              <template #bottom>
+                <div class="d-flex justify-space-between align-center pa-4 bg-grey-lighten-3">
+                  <div class="d-flex align-center">
+                    <v-chip color="primary" variant="flat" class="me-3">
+                      <v-icon start>mdi-calendar-range</v-icon>
+                      Next 15 Days
+                    </v-chip>
+                    <span class="text-body-2">
+                      Total payments due within next 15 days:
+                    </span>
+                    <strong class="text-primary text-h6 ms-2">
+                      ₱{{ next15DaysTotal.toLocaleString() }}
+                    </strong>
+                  </div>
+                </div>
               </template>
             </v-data-table>
           </v-card-text>
@@ -440,7 +455,6 @@ const paymentHistory = ref<any[]>([])
 const currentUser = ref<any>(null)
 
 const scheduleHeaders = [
-  { title: 'Day #', key: 'period', sortable: false },
   { title: 'Date', key: 'due_date' },
   { title: 'Daily Payment', key: 'amount_due' },
   { title: 'Amount Paid', key: 'amount_paid' },
@@ -487,6 +501,25 @@ const remainingBalance = computed(() => {
   if (!selectedLoan.value) return 0
   const principal = selectedLoan.value.principal_amount || 0
   return principal - totalPaid.value
+})
+
+const next15DaysTotal = computed(() => {
+  if (!amortizationSchedule.value.length) return 0
+
+  const today = new Date()
+  const fifteenDaysFromNow = new Date()
+  fifteenDaysFromNow.setDate(today.getDate() + 15)
+
+  const next15DaysPayments = amortizationSchedule.value
+    .filter(item => {
+      const dueDate = new Date(item.due_date)
+      return item.status !== 'paid' &&
+             dueDate >= today &&
+             dueDate <= fifteenDaysFromNow
+    })
+    .reduce((total, item) => total + (item.amount_due || 0), 0)
+
+  return next15DaysPayments
 })
 
 // Generate amortization schedule based on loan details
