@@ -91,10 +91,46 @@
           </p>
         </div>
 
+        <!-- Unpaid Loan Warning -->
+        <v-alert
+          v-if="hasUnpaidLoan"
+          type="error"
+          variant="tonal"
+          class="mb-6"
+          prominent
+          border="left"
+          color="error"
+          text-color="black"
+        >
+          <v-alert-title class="text-black font-weight-bold">Unable to Apply for New Loan</v-alert-title>
+          <div class="mt-2">
+            <p class="mb-3 text-black">
+              You currently have an existing loan that has not been fully paid. You must settle your outstanding loan balance before applying for a new one.
+            </p>
+            <v-btn
+              color="error"
+              variant="outlined"
+              prepend-icon="mdi-credit-card"
+              @click="$router.push('/client/payments')"
+              class="me-3"
+            >
+              Make Payment
+            </v-btn>
+            <v-btn
+              color="error"
+              variant="outlined"
+              prepend-icon="mdi-file-document-multiple"
+              @click="$router.push('/client/loans')"
+            >
+              View My Loans
+            </v-btn>
+          </div>
+        </v-alert>
+
         <v-card>
           <v-card-text>
             <!-- Progress Stepper -->
-            <v-stepper v-model="currentStep" alt-labels class="elevation-0">
+            <v-stepper v-model="currentStep" alt-labels class="elevation-0" :disabled="hasUnpaidLoan">
               <v-stepper-header>
                 <v-stepper-item
                   :complete="currentStep > 1"
@@ -1143,6 +1179,17 @@
                 </v-btn>
               </v-card-actions>
             </v-stepper>
+
+            <!-- Overlay to disable form when unpaid loan exists -->
+            <v-overlay
+              v-model="hasUnpaidLoan"
+              contained
+              persistent
+              class="text-center"
+              :scrim="false"
+            >
+              <div />
+            </v-overlay>
           </v-card-text>
         </v-card>
       </v-container>
@@ -1193,6 +1240,7 @@ const showTerms = ref(false);
 const currentUser = ref(null);
 const isFirstTimeLoan = ref(true);
 const existingLoans = ref([]);
+const hasUnpaidLoan = ref(false);
 
 // Form refs
 const personalForm = ref();
@@ -1474,12 +1522,26 @@ const checkExistingLoans = async (userId: string) => {
     existingLoans.value = userLoans;
     isFirstTimeLoan.value = userLoans.length === 0;
 
+    // Check for unpaid loans
+    // A loan is considered unpaid if:
+    // 1. Status is 'active' or 'approved' (not 'closed', 'rejected', or 'restructured')
+    // 2. AND fully_paid is false or undefined
+    const unpaidLoans = userLoans.filter(
+      (loan: any) =>
+        (loan.status === 'active' || loan.status === 'approved' || loan.status === 'pending') &&
+        !loan.fully_paid
+    );
+    hasUnpaidLoan.value = unpaidLoans.length > 0;
+
     console.log("Existing loans:", userLoans.length);
     console.log("Is first time loan:", isFirstTimeLoan.value);
+    console.log("Has unpaid loan:", hasUnpaidLoan.value);
+    console.log("Unpaid loans count:", unpaidLoans.length);
   } catch (error) {
     console.error("Error checking existing loans:", error);
     // Default to first time loan if there's an error
     isFirstTimeLoan.value = true;
+    hasUnpaidLoan.value = false;
   }
 };
 
@@ -1812,5 +1874,35 @@ onMounted(async () => {
   :deep(.v-navigation-drawer--active) {
     transform: translateX(0) !important;
   }
+}
+
+/* Disable form when unpaid loan exists */
+:deep(.v-stepper--disabled) {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+:deep(.v-stepper--disabled .v-stepper-header) {
+  opacity: 0.5;
+}
+
+/* Custom styling for unpaid loan alert */
+:deep(.v-alert.v-alert--variant-tonal[type="error"]) {
+  background-color: rgba(244, 67, 54, 0.08) !important;
+  border-left-color: rgb(244, 67, 54) !important;
+}
+
+:deep(.v-alert.v-alert--variant-tonal[type="error"] .v-alert__overlay) {
+  background-color: rgba(244, 67, 54, 0.08) !important;
+}
+
+:deep(.v-alert.v-alert--variant-tonal[type="error"] .v-alert__border) {
+  border-color: rgb(244, 67, 54) !important;
+}
+
+/* Ensure text is black */
+.v-alert-title.text-black,
+.text-black {
+  color: #000000 !important;
 }
 </style>
