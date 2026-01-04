@@ -202,13 +202,13 @@
                   <v-icon start>mdi-cash</v-icon>
                   Pay
                 </v-btn>
-                <v-chip v-else color="error" size="small" variant="flat">
+                <v-chip v-else color="success" size="small" variant="flat">
                   <v-icon start size="small">mdi-check</v-icon>
                   Paid
                 </v-chip>
               </template>
 
-              <!-- Bottom slot for 15-day total -->
+              <!-- Bottom slot for next 15 days total -->
               <template #bottom>
                 <div class="d-flex justify-space-between align-center pa-4 bg-grey-lighten-3">
                   <div class="d-flex align-center">
@@ -217,7 +217,7 @@
                       Next 15 Days
                     </v-chip>
                     <span class="text-body-2">
-                      Total payments due within next 15 days:
+                      Total payments due:
                     </span>
                     <strong class="text-primary text-h6 ms-2">
                       ₱{{ next15DaysTotal.toLocaleString() }}
@@ -525,20 +525,11 @@ const filteredPayments = computed(() => {
 const next15DaysTotal = computed(() => {
   if (!loanSchedule.value.length) return 0
 
-  const today = new Date()
-  const fifteenDaysFromNow = new Date()
-  fifteenDaysFromNow.setDate(today.getDate() + 15)
-
-  const next15DaysPayments = loanSchedule.value
-    .filter(item => {
-      const dueDate = new Date(item.due_date)
-      return item.status !== 'paid' &&
-             dueDate >= today &&
-             dueDate <= fifteenDaysFromNow
-    })
+  // Take first 15 schedule days, then sum only unpaid amounts
+  return loanSchedule.value
+    .slice(0, 15)
+    .filter(item => item.status !== 'paid')
     .reduce((total, item) => total + (item.amount_due || 0), 0)
-
-  return next15DaysPayments
 })
 
 // Helper functions
@@ -565,7 +556,7 @@ const getDayName = (date: string) => {
 
 const getScheduleStatusColor = (status: string) => {
   const colors: Record<string, string> = {
-    paid: 'error',
+    paid: 'success',
     upcoming: 'black',
     overdue: 'error',
     incomplete: 'grey-darken-2'
