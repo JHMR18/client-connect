@@ -67,7 +67,6 @@
             @click="$router.push('/admin/payments')"
           />
 
-  
           <v-list-group value="reports">
             <template #activator="{ props }">
               <v-list-item v-bind="props" prepend-icon="mdi-chart-box" title="Reports" />
@@ -77,12 +76,6 @@
               prepend-icon="mdi-chart-line"
               :active="$route.path === '/admin/financial-reports'"
               @click="$router.push('/admin/financial-reports')"
-            />
-            <v-list-item
-              title="Audit Logs"
-              prepend-icon="mdi-history"
-              :active="$route.path === '/admin/audit-logs'"
-              @click="$router.push('/admin/audit-logs')"
             />
           </v-list-group>
         </v-list>

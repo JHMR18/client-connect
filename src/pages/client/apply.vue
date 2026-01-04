@@ -1164,7 +1164,7 @@
                   v-if="currentStep < 6"
                   color="red"
                   @click="nextStep"
-                  :disabled="currentStep === 5 && !allRequiredFilesUploaded"
+                  :disabled="hasUnpaidLoan || (currentStep === 5 && !allRequiredFilesUploaded)"
                 >
                   Next
                 </v-btn>
@@ -1172,7 +1172,7 @@
                   v-else
                   color="red"
                   :loading="submitting"
-                  :disabled="!application.termsAccepted"
+                  :disabled="hasUnpaidLoan || !application.termsAccepted"
                   @click="submitApplication"
                 >
                   Submit Application
