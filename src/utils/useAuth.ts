@@ -6,7 +6,8 @@ import {
   processLogout,
   refreshToken,
   shouldRefreshToken,
-  getUserRole
+  getUserRole,
+  syncTokenToClient
 } from "./useDirectus";
 
 export function useAuth() {
@@ -66,6 +67,9 @@ export function useAuth() {
     }
 
     try {
+      // Ensure token is synced to Directus client before any auth check
+      await syncTokenToClient();
+
       // Check if token needs refresh
       if (shouldRefreshToken()) {
         const refreshed = await refreshToken();
@@ -81,8 +85,19 @@ export function useAuth() {
     } catch (error: any) {
       console.error("Auth check failed:", error);
 
-      // Try to refresh token on 401/403 errors
-      if (error?.response?.status === 401 || error?.response?.status === 403) {
+      // Check for unauthorized errors (Directus SDK may throw errors with different structures)
+      const isUnauthorized =
+        error?.response?.status === 401 ||
+        error?.response?.status === 403 ||
+        error?.errors?.[0]?.extensions?.code === 'FORBIDDEN' ||
+        error?.errors?.[0]?.extensions?.code === 'INVALID_TOKEN' ||
+        error?.message?.includes('401') ||
+        error?.message?.includes('403') ||
+        error?.message?.includes('Forbidden') ||
+        error?.message?.includes('Unauthorized');
+
+      // Try to refresh token on unauthorized errors
+      if (isUnauthorized) {
         const refreshed = await refreshToken();
         if (refreshed) {
           try {

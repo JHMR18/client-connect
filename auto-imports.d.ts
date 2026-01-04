@@ -99,6 +99,7 @@ declare global {
   const shouldRefreshToken: typeof import('./src/utils/useDirectus')['shouldRefreshToken']
   const syncRef: typeof import('@vueuse/core')['syncRef']
   const syncRefs: typeof import('@vueuse/core')['syncRefs']
+  const syncTokenToClient: typeof import('./src/utils/useDirectus')['syncTokenToClient']
   const templateRef: typeof import('@vueuse/core')['templateRef']
   const throttledRef: typeof import('@vueuse/core')['throttledRef']
   const throttledWatch: typeof import('@vueuse/core')['throttledWatch']
@@ -425,6 +426,7 @@ declare module 'vue' {
     readonly shouldRefreshToken: UnwrapRef<typeof import('./src/utils/useDirectus')['shouldRefreshToken']>
     readonly syncRef: UnwrapRef<typeof import('@vueuse/core')['syncRef']>
     readonly syncRefs: UnwrapRef<typeof import('@vueuse/core')['syncRefs']>
+    readonly syncTokenToClient: UnwrapRef<typeof import('./src/utils/useDirectus')['syncTokenToClient']>
     readonly templateRef: UnwrapRef<typeof import('@vueuse/core')['templateRef']>
     readonly throttledRef: UnwrapRef<typeof import('@vueuse/core')['throttledRef']>
     readonly throttledWatch: UnwrapRef<typeof import('@vueuse/core')['throttledWatch']>

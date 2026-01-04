@@ -14,14 +14,6 @@ export const client = createDirectus(baseUrl)
   .with(rest({ credentials: "include" }))
   .with(authentication("json", { credentials: "include" }));
 
-export const getCurrentUser = async () => {
-  return await client.request(
-    readMe({
-      fields: ["id", "first_name", "last_name", "email", "role", "status"],
-    })
-  );
-};
-
 // Helper function to get access token from cookie
 const getAccessToken = (): string | null => {
   const cookies = document.cookie.split(';');
@@ -34,10 +26,35 @@ const getAccessToken = (): string | null => {
   return null;
 };
 
-// Set access token in cookie
-const setAccessToken = (token: string) => {
+// Set access token in cookie and sync to Directus client
+const setAccessToken = async (token: string) => {
   const accessTokenCookie = useCookie<string | null>("accessToken", { default: () => null });
   accessTokenCookie.value = token;
+  // Also sync to Directus client
+  if (token) {
+    await client.setToken(token);
+  }
+};
+
+// Sync access token from cookie to Directus client
+// This must be called before making authenticated requests
+export const syncTokenToClient = async (): Promise<boolean> => {
+  const accessToken = getAccessToken();
+  if (accessToken) {
+    await client.setToken(accessToken);
+    return true;
+  }
+  return false;
+};
+
+export const getCurrentUser = async () => {
+  // Ensure token is synced to client before making request
+  await syncTokenToClient();
+  return await client.request(
+    readMe({
+      fields: ["id", "first_name", "last_name", "email", "role", "status"],
+    })
+  );
 };
 
 export const refreshToken = async (): Promise<boolean> => {
@@ -53,7 +70,7 @@ export const refreshToken = async (): Promise<boolean> => {
     );
 
     if (response.access_token) {
-      setAccessToken(response.access_token);
+      await setAccessToken(response.access_token);
       sessionStorage.setItem("access_token", response.access_token.toString());
 
       if (response.refresh_token) {
@@ -71,7 +88,7 @@ export const refreshToken = async (): Promise<boolean> => {
   } catch (error) {
     console.warn("Token refresh failed, clearing session:", error);
     // If refresh fails (e.g. expired refresh token), clear everything to force re-login
-    setAccessToken(""); // Clear cookie
+    await setAccessToken(""); // Clear cookie
     sessionStorage.removeItem("refresh_token");
     sessionStorage.removeItem("access_token");
     sessionStorage.removeItem("token_expiry");
