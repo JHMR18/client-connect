@@ -550,6 +550,189 @@ export const useAmortizationSchedule = () => {
   };
 };
 
+// Notifications API
+export interface Notification {
+  id?: string;
+  data: {
+    type: string;
+    client_name: string;
+    loan_amount: number;
+    date: string;
+    loan_id?: string;
+  };
+  read: boolean;
+  date_created?: string;
+}
+
+export const useNotifications = () => {
+  const getNotifications = async (filters?: any) => {
+    try {
+      const query: any = {
+        fields: ["*"],
+        sort: ["-date_created"],
+      };
+
+      if (filters) {
+        query.filter = filters;
+      }
+
+      return await client.request(readItems("notifications", query));
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+      throw error;
+    }
+  };
+
+  const getUnreadNotifications = async () => {
+    try {
+      return await client.request(
+        readItems("notifications", {
+          fields: ["*"],
+          filter: { read: { _eq: false } },
+          sort: ["-date_created"],
+        }),
+      );
+    } catch (error) {
+      console.error("Error fetching unread notifications:", error);
+      throw error;
+    }
+  };
+
+  const createNotification = async (data: Partial<Notification>) => {
+    try {
+      return await client.request(createItem("notifications", data));
+    } catch (error) {
+      console.error("Error creating notification:", error);
+      throw error;
+    }
+  };
+
+  const markAsRead = async (id: string) => {
+    try {
+      return await client.request(updateItem("notifications", id, { read: true }));
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      throw error;
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      const unread = await getUnreadNotifications();
+      const promises = unread.map((notif: any) =>
+        client.request(updateItem("notifications", notif.id, { read: true })),
+      );
+      return await Promise.all(promises);
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+      throw error;
+    }
+  };
+
+  return {
+    getNotifications,
+    getUnreadNotifications,
+    createNotification,
+    markAsRead,
+    markAllAsRead,
+  };
+};
+
+// Approved Loan Notifications API (for client notifications)
+export interface ApprovedLoanNotification {
+  id?: string;
+  client_id: string;
+  message: string;
+  read: boolean;
+  date_created?: string;
+}
+
+export const useApprovedLoanNotifications = () => {
+  const getApprovedLoanNotifications = async (clientId: string) => {
+    try {
+      console.log("🔵 API: Fetching approved_loan_notif for client_id:", clientId);
+      // Fetch all notifications first (without filter to avoid 500 error)
+      const allNotifs = await client.request(
+        readItems("approved_loan_notif", {
+          fields: ["*"],
+          sort: ["-date_created"],
+        }),
+      );
+      console.log("✅ API: All notifications:", allNotifs);
+      // Filter client-side by client_id
+      const result = allNotifs.filter((notif: any) => {
+        const notifClientId = typeof notif.client_id === 'object' ? notif.client_id?.id : notif.client_id;
+        console.log("🔍 Comparing:", notifClientId, "with", clientId);
+        return notifClientId === clientId;
+      });
+      console.log("✅ API: Filtered result:", result);
+      return result;
+    } catch (error: any) {
+      console.error("❌ API Error fetching approved loan notifications:", error);
+      console.error("❌ API Error details:", error?.errors || error?.message);
+      throw error;
+    }
+  };
+
+  const getUnreadApprovedLoanNotifications = async (clientId: string) => {
+    try {
+      const allNotifs = await client.request(
+        readItems("approved_loan_notif", {
+          fields: ["*"],
+          sort: ["-date_created"],
+        }),
+      );
+      // Filter client-side
+      return allNotifs.filter((notif: any) => {
+        const notifClientId = typeof notif.client_id === 'object' ? notif.client_id?.id : notif.client_id;
+        return notifClientId === clientId && !notif.read;
+      });
+    } catch (error) {
+      console.error("Error fetching unread approved loan notifications:", error);
+      throw error;
+    }
+  };
+
+  const createApprovedLoanNotification = async (data: Partial<ApprovedLoanNotification>) => {
+    try {
+      return await client.request(createItem("approved_loan_notif", data));
+    } catch (error) {
+      console.error("Error creating approved loan notification:", error);
+      throw error;
+    }
+  };
+
+  const markApprovedLoanNotificationAsRead = async (id: string) => {
+    try {
+      return await client.request(updateItem("approved_loan_notif", id, { read: true }));
+    } catch (error) {
+      console.error("Error marking approved loan notification as read:", error);
+      throw error;
+    }
+  };
+
+  const markAllApprovedLoanNotificationsAsRead = async (clientId: string) => {
+    try {
+      const unread = await getUnreadApprovedLoanNotifications(clientId);
+      const promises = unread.map((notif: any) =>
+        client.request(updateItem("approved_loan_notif", notif.id, { read: true })),
+      );
+      return await Promise.all(promises);
+    } catch (error) {
+      console.error("Error marking all approved loan notifications as read:", error);
+      throw error;
+    }
+  };
+
+  return {
+    getApprovedLoanNotifications,
+    getUnreadApprovedLoanNotifications,
+    createApprovedLoanNotification,
+    markApprovedLoanNotificationAsRead,
+    markAllApprovedLoanNotificationsAsRead,
+  };
+};
+
 // Dashboard Statistics
 export const useDashboardStats = () => {
   const getClientStats = async (clientId: string) => {

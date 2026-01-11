@@ -4,11 +4,11 @@
       <div class="pa-4">
         <div class="d-flex align-center mb-6">
           <div class="app-icon me-3">
-            <v-icon color="error" size="32">mdi-shield-account</v-icon>
+            <v-icon color="error" size="32">mdi-account-network</v-icon>
           </div>
           <div>
             <h3 class="text-h6 font-weight-bold text-error">Client Connect</h3>
-            <p class="text-caption opacity-80 mb-0">Admin Portal</p>
+            <p class="text-caption opacity-80 mb-0">Client Portal</p>
           </div>
         </div>
 
@@ -19,65 +19,37 @@
             prepend-icon="mdi-view-dashboard"
             title="Dashboard"
             value="dashboard"
-            :active="$route.path === '/admin/dashboard'"
-            @click="$router.push('/admin/dashboard')"
+            :active="$route.path === '/client/dashboard'"
+            @click="$router.push('/client/dashboard')"
           />
-
-          <v-list-group value="loans">
-            <template #activator="{ props }">
-              <v-list-item
-                v-bind="props"
-                prepend-icon="mdi-file-document-multiple"
-                title="Loan Management"
-              />
-            </template>
-            <v-list-item
-              title="Applications"
-              prepend-icon="mdi-file-document-plus"
-              :active="$route.path === '/admin/applications'"
-              @click="$router.push('/admin/applications')"
-            />
-            <v-list-item
-              title="Active Loans"
-              prepend-icon="mdi-file-document-check"
-              :active="$route.path === '/admin/active-loans'"
-              @click="$router.push('/admin/active-loans')"
-            />
-            <v-list-item
-              title="Risk Assessment"
-              prepend-icon="mdi-scale-balance"
-              :active="$route.path === '/admin/risk-assessment'"
-              @click="$router.push('/admin/risk-assessment')"
-            />
-          </v-list-group>
-
           <v-list-item
-            prepend-icon="mdi-account-group"
-            title="Clients"
-            value="clients"
-            :active="$route.path === '/admin/clients'"
-            @click="$router.push('/admin/clients')"
+            prepend-icon="mdi-file-document-plus"
+            title="Apply for Loan"
+            value="apply"
+            :active="$route.path === '/client/apply'"
+            @click="$router.push('/client/apply')"
           />
-
+          <v-list-item
+            prepend-icon="mdi-file-document-multiple"
+            title="My Loans"
+            value="loans"
+            :active="$route.path === '/client/loans'"
+            @click="$router.push('/client/loans')"
+          />
           <v-list-item
             prepend-icon="mdi-credit-card"
             title="Payments"
             value="payments"
-            :active="$route.path === '/admin/payments'"
-            @click="$router.push('/admin/payments')"
+            :active="$route.path === '/client/payments'"
+            @click="$router.push('/client/payments')"
           />
-
-          <v-list-group value="reports">
-            <template #activator="{ props }">
-              <v-list-item v-bind="props" prepend-icon="mdi-chart-box" title="Reports" />
-            </template>
-            <v-list-item
-              title="Financial Reports"
-              prepend-icon="mdi-chart-line"
-              :active="$route.path === '/admin/financial-reports'"
-              @click="$router.push('/admin/financial-reports')"
-            />
-          </v-list-group>
+          <v-list-item
+            prepend-icon="mdi-account-edit"
+            title="Profile"
+            value="profile"
+            :active="$route.path === '/client/profile'"
+            @click="$router.push('/client/profile')"
+          />
         </v-list>
       </div>
 
@@ -136,19 +108,18 @@
                 @click="handleNotificationClick(notif)"
               >
                 <template #prepend>
-                  <v-avatar color="error" size="40">
-                    <v-icon color="white">mdi-file-document-plus</v-icon>
+                  <v-avatar color="success" size="40">
+                    <v-icon color="white">mdi-check-circle</v-icon>
                   </v-avatar>
                 </template>
                 <v-list-item-title class="text-body-2 font-weight-medium">
-                  New Loan Application
+                  Loan Approved
                 </v-list-item-title>
                 <v-list-item-subtitle class="text-caption">
-                  <strong>{{ notif.data?.client_name }}</strong> applied for
-                  <strong>{{ formatCurrency(notif.data?.loan_amount) }}</strong>
+                  {{ notif.message }}
                 </v-list-item-subtitle>
                 <v-list-item-subtitle class="text-caption text-medium-emphasis mt-1">
-                  {{ formatDate(notif.data?.date || notif.date_created) }}
+                  {{ formatDate(notif.date_created) }}
                 </v-list-item-subtitle>
                 <template #append>
                   <v-icon v-if="!notif.read" color="primary" size="10">mdi-circle</v-icon>
@@ -163,11 +134,11 @@
         </v-menu>
 
         <v-chip color="error" variant="flat" class="me-4">
-          <v-icon start>mdi-shield-account</v-icon>
-          Admin Portal
+          <v-icon start>mdi-account-circle</v-icon>
+          Client Portal
         </v-chip>
         <v-avatar color="error" size="40">
-          <v-icon>mdi-account-supervisor</v-icon>
+          <v-icon>mdi-account</v-icon>
         </v-avatar>
       </div>
     </v-app-bar>
@@ -182,27 +153,25 @@
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useAuth } from "@/utils/useAuth";
-import { useNotifications } from "@/utils/useSmartLoanApi";
+import { useApprovedLoanNotifications } from "@/utils/useSmartLoanApi";
+import { getCurrentUser } from "@/utils/useDirectus";
 
 const router = useRouter();
 const { logout } = useAuth();
-const { getNotifications, markAsRead, markAllAsRead } = useNotifications();
+const {
+  getApprovedLoanNotifications,
+  markApprovedLoanNotificationAsRead,
+  markAllApprovedLoanNotificationsAsRead,
+} = useApprovedLoanNotifications();
 const drawer = ref(true);
 
-// Notifications state
+// User and notifications state
+const currentUser = ref<any>(null);
 const notifications = ref<any[]>([]);
 
 const unreadCount = computed(() => {
   return notifications.value.filter((n) => !n.read).length;
 });
-
-const formatCurrency = (amount: number) => {
-  if (!amount) return "N/A";
-  return new Intl.NumberFormat("en-PH", {
-    style: "currency",
-    currency: "PHP",
-  }).format(amount);
-};
 
 const formatDate = (dateString: string) => {
   if (!dateString) return "";
@@ -220,42 +189,43 @@ const formatDate = (dateString: string) => {
   return date.toLocaleDateString("en-PH", { month: "short", day: "numeric" });
 };
 
-const parseNotificationData = (notif: any) => {
-  if (typeof notif.data === "string") {
-    try {
-      notif.data = JSON.parse(notif.data);
-    } catch (e) {
-      console.error("Error parsing notification data:", e);
-    }
-  }
-  return notif;
-};
-
 const fetchNotifications = async () => {
+  if (!currentUser.value?.id) {
+    console.log("❌ No current user ID available");
+    return;
+  }
   try {
-    const raw = await getNotifications();
-    notifications.value = raw.map(parseNotificationData);
-  } catch (error) {
-    console.error("Error fetching notifications:", error);
+    console.log("🔵 Fetching notifications for user ID:", currentUser.value.id);
+    const result = await getApprovedLoanNotifications(currentUser.value.id);
+    console.log("✅ Notifications fetched:", result);
+    notifications.value = result;
+  } catch (error: any) {
+    console.error("❌ Error fetching notifications:", error);
+    console.error("❌ Error message:", error?.message);
+    console.error("❌ Error response:", error?.response);
+    console.error("❌ Full error:", JSON.stringify(error, null, 2));
+    // Don't throw, just set empty notifications
+    notifications.value = [];
   }
 };
 
 const handleNotificationClick = async (notif: any) => {
   if (!notif.read) {
     try {
-      await markAsRead(notif.id);
+      await markApprovedLoanNotificationAsRead(notif.id);
       notif.read = true;
     } catch (error) {
       console.error("Error marking notification as read:", error);
     }
   }
-  // Navigate to applications page
-  router.push("/admin/applications");
+  // Navigate to loans page
+  router.push("/client/loans");
 };
 
 const handleMarkAllRead = async () => {
+  if (!currentUser.value?.id) return;
   try {
-    await markAllAsRead();
+    await markAllApprovedLoanNotificationsAsRead(currentUser.value.id);
     notifications.value.forEach((n) => (n.read = true));
   } catch (error) {
     console.error("Error marking all as read:", error);
@@ -267,10 +237,15 @@ const handleLogout = async () => {
   router.push("/");
 };
 
-onMounted(() => {
-  fetchNotifications();
-  // Refresh notifications every 30 seconds
-  setInterval(fetchNotifications, 30000);
+onMounted(async () => {
+  try {
+    currentUser.value = await getCurrentUser();
+    await fetchNotifications();
+    // Refresh notifications every 30 seconds
+    setInterval(fetchNotifications, 30000);
+  } catch (error) {
+    console.error("Error loading user:", error);
+  }
 });
 </script>
 

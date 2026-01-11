@@ -257,7 +257,7 @@
                 <v-card variant="outlined">
                   <v-card-title class="text-h6">Submitted Documents</v-card-title>
                   <v-card-text>
-                    <v-row>
+                    <v-row v-if="selectedApplication.documents && selectedApplication.documents.length > 0">
                       <v-col
                         cols="6"
                         md="3"
@@ -267,14 +267,20 @@
                         <v-card class="document-card" variant="tonal" color="error">
                           <v-card-text class="text-center">
                             <v-icon size="32" class="mb-2">{{ getDocumentIcon(doc.type) }}</v-icon>
-                            <p class="text-caption">{{ doc.type }}</p>
-                            <v-btn size="small" variant="outlined" @click="viewDocument(doc)">
+                            <p class="text-caption font-weight-medium">{{ doc.type }}</p>
+                            <p class="text-caption text-medium-emphasis mb-2">{{ doc.fileName }}</p>
+                            <v-btn size="small" variant="outlined" color="error" @click="viewDocument(doc)">
+                              <v-icon start size="16">mdi-eye</v-icon>
                               View
                             </v-btn>
                           </v-card-text>
                         </v-card>
                       </v-col>
                     </v-row>
+                    <div v-else class="text-center py-6">
+                      <v-icon size="48" color="grey-lighten-1" class="mb-2">mdi-file-document-outline</v-icon>
+                      <p class="text-body-2 text-medium-emphasis">No documents uploaded</p>
+                    </div>
                   </v-card-text>
                 </v-card>
               </v-col>
@@ -323,6 +329,64 @@
         </v-card>
       </v-dialog>
 
+      <!-- Image Preview Dialog -->
+      <v-dialog v-model="showImagePreview" max-width="900">
+        <v-card>
+          <v-card-title class="d-flex justify-space-between align-center">
+            <span>{{ previewDocument?.type }}</span>
+            <v-btn icon variant="text" @click="showImagePreview = false">
+              <v-icon>mdi-close</v-icon>
+            </v-btn>
+          </v-card-title>
+          <v-divider />
+          <v-card-text class="pa-0 text-center" style="background: #f5f5f5;">
+            <v-img
+              v-if="previewDocument?.fileUrl"
+              :src="previewDocument.fileUrl"
+              max-height="600"
+              contain
+              class="mx-auto"
+            >
+              <template #placeholder>
+                <div class="d-flex align-center justify-center fill-height">
+                  <v-progress-circular indeterminate color="error" />
+                </div>
+              </template>
+              <template #error>
+                <div class="d-flex flex-column align-center justify-center fill-height pa-8">
+                  <v-icon size="64" color="grey">mdi-file-document-outline</v-icon>
+                  <p class="text-body-1 mt-4">Unable to preview this file</p>
+                  <v-btn
+                    color="error"
+                    variant="outlined"
+                    class="mt-2"
+                    @click="openInNewTab(previewDocument?.fileUrl)"
+                  >
+                    <v-icon start>mdi-open-in-new</v-icon>
+                    Open in New Tab
+                  </v-btn>
+                </div>
+              </template>
+            </v-img>
+          </v-card-text>
+          <v-divider />
+          <v-card-actions>
+            <v-chip size="small" color="grey" variant="tonal">
+              {{ previewDocument?.fileName }}
+            </v-chip>
+            <v-spacer />
+            <v-btn
+              color="error"
+              variant="outlined"
+              @click="openInNewTab(previewDocument?.fileUrl)"
+            >
+              <v-icon start>mdi-open-in-new</v-icon>
+              Open in New Tab
+            </v-btn>
+            <v-btn color="error" @click="showImagePreview = false">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
 
     </v-container>
   </AdminLayout>
@@ -331,14 +395,19 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
-import { useLoanApplications, useLoanProducts } from "@/utils/useSmartLoanApi";
-import { getCurrentUser } from "@/utils/useDirectus";
+import { useLoanApplications, useLoanProducts, useApprovedLoanNotifications } from "@/utils/useSmartLoanApi";
+import { getCurrentUser, client } from "@/utils/useDirectus";
+import { readItems } from "@directus/sdk";
 import AdminLayout from "@/layouts/AdminLayout.vue";
+
+const baseUrl = import.meta.env.VITE_DIRECTUS_URL || "http://localhost:8055";
 
 const router = useRouter();
 const loading = ref(false);
 const showDetails = ref(false);
 const showConfirm = ref(false);
+const showImagePreview = ref(false);
+const previewDocument = ref<any>(null);
 
 const selectedApplication = ref(null);
 const confirmTitle = ref("");
@@ -354,6 +423,7 @@ const {
   rejectApplication: rejectApplicationApi,
 } = useLoanApplications();
 const { getProducts } = useLoanProducts();
+const { createApprovedLoanNotification } = useApprovedLoanNotifications();
 
 
 // Filters
@@ -411,6 +481,14 @@ const statusOptions = [
 ];
 
 // Methods
+const formatCurrency = (amount: number) => {
+  if (!amount) return "N/A";
+  return new Intl.NumberFormat("en-PH", {
+    style: "currency",
+    currency: "PHP",
+  }).format(amount);
+};
+
 const getStatusColor = (status: string) => {
   switch (status) {
     case "pending":
@@ -456,9 +534,43 @@ const formatDate = (dateStr: string) => {
   });
 };
 
-const viewApplication = (application: any) => {
-  selectedApplication.value = application;
+const viewApplication = async (application: any) => {
+  selectedApplication.value = { ...application, documents: [] };
   showDetails.value = true;
+
+  // Fetch documents for this loan
+  try {
+    const requirements = await client.request(
+      readItems("loan_requirments", {
+        fields: ["*", "file.*"],
+        filter: { loan: { _eq: application.id } },
+      })
+    );
+
+    // Map requirements to documents format
+    const documents = requirements.map((req: any) => ({
+      type: formatRequirementType(req.requirement_type),
+      requirementType: req.requirement_type,
+      fileId: req.file?.id || req.file,
+      fileName: req.file?.filename_download || "Document",
+      fileUrl: `${baseUrl}/assets/${req.file?.id || req.file}`,
+    }));
+
+    selectedApplication.value = { ...selectedApplication.value, documents };
+    console.log("📄 Loaded documents:", documents);
+  } catch (error) {
+    console.error("Error fetching documents:", error);
+  }
+};
+
+const formatRequirementType = (type: string) => {
+  const typeMap: Record<string, string> = {
+    valid_id: "Valid ID",
+    permit: "Business Permit",
+    photo: "Photo",
+    "co-maker_id": "Co-maker ID",
+  };
+  return typeMap[type] || type;
 };
 
 const approveApplication = (application: any) => {
@@ -484,6 +596,18 @@ const executeAction = async () => {
 
       if (confirmAction.value === "approve") {
         await approveApplicationApi(selectedApplication.value.id, currentUser.value.id, remarks);
+
+        // Create notification for the client
+        try {
+          await createApprovedLoanNotification({
+            client_id: selectedApplication.value.clientId,
+            message: `Your loan application for ${formatCurrency(selectedApplication.value.loanAmount)} has been approved!`,
+            read: false,
+          });
+          console.log("Approved loan notification created successfully");
+        } catch (notifError) {
+          console.error("Error creating approved loan notification:", notifError);
+        }
       } else {
         await rejectApplicationApi(selectedApplication.value.id, currentUser.value.id, remarks);
       }
@@ -505,8 +629,18 @@ const executeAction = async () => {
 };
 
 const viewDocument = (doc: any) => {
-  // Here you would open/download the document
-  console.log("View document:", doc);
+  if (doc.fileUrl) {
+    previewDocument.value = doc;
+    showImagePreview.value = true;
+  } else {
+    console.log("No file URL available for document:", doc);
+  }
+};
+
+const openInNewTab = (url: string) => {
+  if (url) {
+    window.open(url, "_blank");
+  }
 };
 
 
@@ -523,6 +657,7 @@ const loadApplications = async () => {
     // Transform applications data for table display
     applications.value = apps.map((app) => ({
       id: app.id,
+      clientId: app.client?.id || null,
       clientName: `${app.client?.first_name || "Unknown"} ${app.client?.last_name || ""}`.trim(),
       loanProduct: app.loan_product?.[0]?.loan_products_id?.name || "Unknown",
       loanAmount: app.principal_amount,

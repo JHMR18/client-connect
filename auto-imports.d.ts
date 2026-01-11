@@ -426,6 +426,7 @@ declare module 'vue' {
     readonly shouldRefreshToken: UnwrapRef<typeof import('./src/utils/useDirectus')['shouldRefreshToken']>
     readonly syncRef: UnwrapRef<typeof import('@vueuse/core')['syncRef']>
     readonly syncRefs: UnwrapRef<typeof import('@vueuse/core')['syncRefs']>
+    readonly syncTokenToClient: UnwrapRef<typeof import('./src/utils/useDirectus')['syncTokenToClient']>
     readonly templateRef: UnwrapRef<typeof import('@vueuse/core')['templateRef']>
     readonly throttledRef: UnwrapRef<typeof import('@vueuse/core')['throttledRef']>
     readonly throttledWatch: UnwrapRef<typeof import('@vueuse/core')['throttledWatch']>

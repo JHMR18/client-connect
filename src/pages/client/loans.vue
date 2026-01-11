@@ -1,295 +1,212 @@
 <template>
-  <v-app>
-    <v-navigation-drawer v-model="drawer" app permanent color="#1a1a1a" theme="dark" width="280">
-      <div class="pa-4">
-        <div class="d-flex align-center mb-6">
-          <div class="app-icon me-3">
-            <v-icon color="error" size="32">mdi-account-network</v-icon>
-          </div>
-          <div>
-            <h3 class="text-h6 font-weight-bold text-error">Client Connect</h3>
-            <p class="text-caption opacity-80 mb-0">Client Portal</p>
-          </div>
+  <ClientLayout>
+    <v-container fluid class="pa-6">
+      <!-- Header -->
+      <div class="d-flex justify-space-between align-center mb-8">
+        <div>
+          <h1 class="text-h4 font-weight-bold mb-2">My Loans</h1>
+          <p class="text-subtitle-1 text-medium-emphasis">
+            Track your loan applications and active loans
+          </p>
         </div>
 
-        <v-divider class="mb-4" />
-
-        <v-list nav density="compact">
-          <v-list-item
-            prepend-icon="mdi-view-dashboard"
-            title="Dashboard"
-            value="dashboard"
-            :active="$route.path === '/client/dashboard'"
-            @click="$router.push('/client/dashboard')"
-          />
-          <v-list-item
-            prepend-icon="mdi-file-document-plus"
-            title="Apply for Loan"
-            value="apply"
-            :active="$route.path === '/client/apply'"
-            @click="$router.push('/client/apply')"
-          />
-          <v-list-item
-            prepend-icon="mdi-file-document-multiple"
-            title="My Loans"
-            value="loans"
-            :active="$route.path === '/client/loans'"
-            @click="$router.push('/client/loans')"
-          />
-          <v-list-item
-            prepend-icon="mdi-credit-card"
-            title="Payments"
-            value="payments"
-            :active="$route.path === '/client/payments'"
-            @click="$router.push('/client/payments')"
-          />
-          <v-list-item
-            prepend-icon="mdi-account-edit"
-            title="Profile"
-            value="profile"
-            :active="$route.path === '/client/profile'"
-            @click="$router.push('/client/profile')"
-          />
-        </v-list>
+        <v-btn color="red" prepend-icon="mdi-refresh" @click="loadLoans" :loading="loading">
+          Refresh
+        </v-btn>
       </div>
 
-      <template #append>
-        <div class="pa-4">
-          <v-divider class="mb-4" />
-          <v-btn color="error" variant="text" prepend-icon="mdi-logout" block @click="handleLogout">
-            Logout
-          </v-btn>
-        </div>
-      </template>
-    </v-navigation-drawer>
+      <!-- Statistics Cards -->
+      <v-row class="mb-6">
+        <v-col cols="12" md="3">
+          <v-card color="#1a1a1a" theme="dark">
+            <v-card-text>
+              <div class="d-flex align-center">
+                <v-icon size="40" class="me-4" color="error">mdi-file-document-multiple</v-icon>
+                <div>
+                  <p class="text-subtitle-2 mb-0 opacity-80">Total Loans</p>
+                  <h3 class="text-h4 font-weight-bold text-error">{{ totalLoans }}</h3>
+                </div>
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
 
-    <v-app-bar app color="white" elevation="2" height="70">
-      <template #prepend>
-        <v-app-bar-nav-icon @click="drawer = !drawer" class="hidden-lg-and-up" />
-      </template>
+        <v-col cols="12" md="3">
+          <v-card color="#1a1a1a" theme="dark">
+            <v-card-text>
+              <div class="d-flex align-center">
+                <v-icon size="40" class="me-4" color="error">mdi-check-circle</v-icon>
+                <div>
+                  <p class="text-subtitle-2 mb-0 opacity-80">Active Loans</p>
+                  <h3 class="text-h4 font-weight-bold text-error">{{ activeLoans }}</h3>
+                </div>
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
 
-      <v-spacer />
+        <v-col cols="12" md="3">
+          <v-card color="#1a1a1a" theme="dark">
+            <v-card-text>
+              <div class="d-flex align-center">
+                <v-icon size="40" class="me-4" color="error">mdi-cash</v-icon>
+                <div>
+                  <p class="text-subtitle-2 mb-0 opacity-80">Outstanding</p>
+                  <h3 class="text-h6 font-weight-bold text-error">
+                    ₱{{ outstandingAmount.toLocaleString() }}
+                  </h3>
+                </div>
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
 
-      <div class="d-flex align-center">
-        <v-chip color="error" variant="flat" class="me-4">
-          <v-icon start>mdi-account-circle</v-icon>
-          Client Portal
-        </v-chip>
-        <v-avatar color="error" size="40">
-          <v-icon>mdi-account</v-icon>
-        </v-avatar>
-      </div>
-    </v-app-bar>
+        <v-col cols="12" md="3">
+          <v-card color="error" theme="dark">
+            <v-card-text>
+              <div class="d-flex align-center">
+                <v-icon size="40" class="me-4">mdi-clock-alert</v-icon>
+                <div>
+                  <p class="text-subtitle-2 mb-0 opacity-80">Pending</p>
+                  <h3 class="text-h4 font-weight-bold">{{ pendingLoans }}</h3>
+                </div>
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
 
-    <v-main>
-      <v-container fluid class="pa-6">
-        <!-- Header -->
-        <div class="d-flex justify-space-between align-center mb-8">
-          <div>
-            <h1 class="text-h4 font-weight-bold mb-2">My Loans</h1>
-            <p class="text-subtitle-1 text-medium-emphasis">
-              Track your loan applications and active loans
-            </p>
-          </div>
+      <!-- Filters -->
+      <v-card class="mb-6">
+        <v-card-text>
+          <v-row>
+            <v-col cols="12" md="6">
+              <v-select
+                v-model="selectedStatus"
+                :items="statusOptions"
+                label="Filter by Status"
+                variant="outlined"
+                clearable
+                @update:model-value="filterLoans"
+              />
+            </v-col>
+            <v-col cols="12" md="6">
+              <v-text-field
+                v-model="searchQuery"
+                label="Search loans..."
+                variant="outlined"
+                prepend-inner-icon="mdi-magnify"
+                clearable
+                @update:model-value="filterLoans"
+              />
+            </v-col>
+          </v-row>
+        </v-card-text>
+      </v-card>
 
-          <v-btn color="red" prepend-icon="mdi-refresh" @click="loadLoans" :loading="loading">
-            Refresh
-          </v-btn>
-        </div>
+      <!-- Loans Grid -->
+      <div v-if="filteredLoans.length > 0">
+        <v-row>
+          <v-col v-for="loan in filteredLoans" :key="loan.id" cols="12" md="6" lg="4">
+            <v-card
+              class="loan-card"
+              :class="getCardClass(loan.status)"
+              @click="viewLoanDetails(loan)"
+              style="cursor: pointer"
+              hover
+            >
+              <v-card-title class="d-flex justify-space-between align-center">
+                <div>
+                  <h4 class="text-h6">Business Loan</h4>
+                  <p class="text-caption mb-0 opacity-70">
+                    Applied: {{ formatDate(loan.applicationDate) }}
+                  </p>
+                </div>
+                <v-chip :color="getStatusColor(loan.status)" size="small" variant="flat">
+                  {{ loan.status.replace("_", " ").toUpperCase() }}
+                </v-chip>
+              </v-card-title>
 
-        <!-- Statistics Cards -->
-        <v-row class="mb-6">
-          <v-col cols="12" md="3">
-            <v-card color="#1a1a1a" theme="dark">
               <v-card-text>
-                <div class="d-flex align-center">
-                  <v-icon size="40" class="me-4" color="error">mdi-file-document-multiple</v-icon>
-                  <div>
-                    <p class="text-subtitle-2 mb-0 opacity-80">Total Loans</p>
-                    <h3 class="text-h4 font-weight-bold text-error">{{ totalLoans }}</h3>
+                <div class="loan-details">
+                  <div class="detail-row">
+                    <span class="label">Amount:</span>
+                    <span class="value">₱{{ loan.principalAmount.toLocaleString() }}</span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="label">Term:</span>
+                    <span class="value">{{ loan.termDays }} days</span>
+                  </div>
+                  <div class="detail-row">
+                    <span class="label">Purpose:</span>
+                    <span class="value">{{ loan.purpose }}</span>
+                  </div>
+                  <div v-if="loan.status === 'active'" class="detail-row">
+                    <span class="label">Outstanding:</span>
+                    <span class="value text-primary font-weight-bold">
+                      ₱{{ (loan.principalAmount - (loan.totalPaid || 0)).toLocaleString() }}
+                    </span>
                   </div>
                 </div>
               </v-card-text>
-            </v-card>
-          </v-col>
 
-          <v-col cols="12" md="3">
-            <v-card color="#1a1a1a" theme="dark">
-              <v-card-text>
-                <div class="d-flex align-center">
-                  <v-icon size="40" class="me-4" color="error">mdi-check-circle</v-icon>
-                  <div>
-                    <p class="text-subtitle-2 mb-0 opacity-80">Active Loans</p>
-                    <h3 class="text-h4 font-weight-bold text-error">{{ activeLoans }}</h3>
-                  </div>
-                </div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-
-          <v-col cols="12" md="3">
-            <v-card color="#1a1a1a" theme="dark">
-              <v-card-text>
-                <div class="d-flex align-center">
-                  <v-icon size="40" class="me-4" color="error">mdi-cash</v-icon>
-                  <div>
-                    <p class="text-subtitle-2 mb-0 opacity-80">Outstanding</p>
-                    <h3 class="text-h6 font-weight-bold text-error">
-                      ₱{{ outstandingAmount.toLocaleString() }}
-                    </h3>
-                  </div>
-                </div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-
-          <v-col cols="12" md="3">
-            <v-card color="error" theme="dark">
-              <v-card-text>
-                <div class="d-flex align-center">
-                  <v-icon size="40" class="me-4">mdi-clock-alert</v-icon>
-                  <div>
-                    <p class="text-subtitle-2 mb-0 opacity-80">Pending</p>
-                    <h3 class="text-h4 font-weight-bold">{{ pendingLoans }}</h3>
-                  </div>
-                </div>
-              </v-card-text>
+              <v-card-actions v-if="loan.status !== 'pending'">
+                <v-btn
+                  v-if="loan.status === 'active'"
+                  color="success"
+                  variant="tonal"
+                  size="small"
+                  prepend-icon="mdi-credit-card"
+                  @click.stop="viewPayments(loan)"
+                >
+                  View Payments
+                </v-btn>
+                <v-btn
+                  color="primary"
+                  variant="tonal"
+                  size="small"
+                  prepend-icon="mdi-eye"
+                  @click.stop="viewLoanDetails(loan)"
+                >
+                  Details
+                </v-btn>
+              </v-card-actions>
             </v-card>
           </v-col>
         </v-row>
+      </div>
 
-        <!-- Filters -->
-        <v-card class="mb-6">
-          <v-card-text>
-            <v-row>
-              <v-col cols="12" md="6">
-                <v-select
-                  v-model="selectedStatus"
-                  :items="statusOptions"
-                  label="Filter by Status"
-                  variant="outlined"
-                  clearable
-                  @update:model-value="filterLoans"
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-text-field
-                  v-model="searchQuery"
-                  label="Search loans..."
-                  variant="outlined"
-                  prepend-inner-icon="mdi-magnify"
-                  clearable
-                  @update:model-value="filterLoans"
-                />
-              </v-col>
-            </v-row>
-          </v-card-text>
-        </v-card>
+      <!-- Empty State -->
+      <div v-else-if="!loading" class="text-center pa-12">
+        <v-icon size="120" class="text-disabled mb-4">mdi-file-document-outline</v-icon>
+        <h3 class="text-h5 text-disabled mb-2">No loans found</h3>
+        <p class="text-body-1 text-disabled mb-6">
+          {{
+            selectedStatus || searchQuery
+              ? "No loans match your current filters"
+              : "You haven't applied for any loans yet"
+          }}
+        </p>
+        <v-btn
+          v-if="!selectedStatus && !searchQuery"
+          color="primary"
+          size="large"
+          prepend-icon="mdi-plus"
+          @click="$router.push('/client/apply')"
+        >
+          Apply for Business Loan
+        </v-btn>
+        <v-btn v-else color="primary" variant="outlined" @click="clearFilters">
+          Clear Filters
+        </v-btn>
+      </div>
 
-        <!-- Loans Grid -->
-        <div v-if="filteredLoans.length > 0">
-          <v-row>
-            <v-col v-for="loan in filteredLoans" :key="loan.id" cols="12" md="6" lg="4">
-              <v-card
-                class="loan-card"
-                :class="getCardClass(loan.status)"
-                @click="viewLoanDetails(loan)"
-                style="cursor: pointer"
-                hover
-              >
-                <v-card-title class="d-flex justify-space-between align-center">
-                  <div>
-                    <h4 class="text-h6">Business Loan</h4>
-                    <p class="text-caption mb-0 opacity-70">
-                      Applied: {{ formatDate(loan.applicationDate) }}
-                    </p>
-                  </div>
-                  <v-chip :color="getStatusColor(loan.status)" size="small" variant="flat">
-                    {{ loan.status.replace("_", " ").toUpperCase() }}
-                  </v-chip>
-                </v-card-title>
-
-                <v-card-text>
-                  <div class="loan-details">
-                    <div class="detail-row">
-                      <span class="label">Amount:</span>
-                      <span class="value">₱{{ loan.principalAmount.toLocaleString() }}</span>
-                    </div>
-                    <div class="detail-row">
-                      <span class="label">Term:</span>
-                      <span class="value">{{ loan.termDays }} days</span>
-                    </div>
-                    <div class="detail-row">
-                      <span class="label">Purpose:</span>
-                      <span class="value">{{ loan.purpose }}</span>
-                    </div>
-                    <div v-if="loan.status === 'active'" class="detail-row">
-                      <span class="label">Outstanding:</span>
-                      <span class="value text-primary font-weight-bold">
-                        ₱{{ (loan.principalAmount - (loan.totalPaid || 0)).toLocaleString() }}
-                      </span>
-                    </div>
-                  </div>
-                </v-card-text>
-
-                <v-card-actions v-if="loan.status !== 'pending'">
-                  <v-btn
-                    v-if="loan.status === 'active'"
-                    color="success"
-                    variant="tonal"
-                    size="small"
-                    prepend-icon="mdi-credit-card"
-                    @click.stop="viewPayments(loan)"
-                  >
-                    View Payments
-                  </v-btn>
-                  <v-btn
-                    color="primary"
-                    variant="tonal"
-                    size="small"
-                    prepend-icon="mdi-eye"
-                    @click.stop="viewLoanDetails(loan)"
-                  >
-                    Details
-                  </v-btn>
-                </v-card-actions>
-              </v-card>
-            </v-col>
-          </v-row>
-        </div>
-
-        <!-- Empty State -->
-        <div v-else-if="!loading" class="text-center pa-12">
-          <v-icon size="120" class="text-disabled mb-4">mdi-file-document-outline</v-icon>
-          <h3 class="text-h5 text-disabled mb-2">No loans found</h3>
-          <p class="text-body-1 text-disabled mb-6">
-            {{
-              selectedStatus || searchQuery
-                ? "No loans match your current filters"
-                : "You haven't applied for any loans yet"
-            }}
-          </p>
-          <v-btn
-            v-if="!selectedStatus && !searchQuery"
-            color="primary"
-            size="large"
-            prepend-icon="mdi-plus"
-            @click="$router.push('/client/apply')"
-          >
-            Apply for Business Loan
-          </v-btn>
-          <v-btn v-else color="primary" variant="outlined" @click="clearFilters">
-            Clear Filters
-          </v-btn>
-        </div>
-
-        <!-- Loading State -->
-        <div v-if="loading" class="text-center pa-12">
-          <v-progress-circular indeterminate color="primary" size="64" />
-          <p class="text-h6 mt-4">Loading your loans...</p>
-        </div>
-      </v-container>
-    </v-main>
+      <!-- Loading State -->
+      <div v-if="loading" class="text-center pa-12">
+        <v-progress-circular indeterminate color="primary" size="64" />
+        <p class="text-h6 mt-4">Loading your loans...</p>
+      </div>
+    </v-container>
 
     <!-- Loan Details Dialog -->
     <v-dialog v-model="showDetails" max-width="800" scrollable>
@@ -439,20 +356,18 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
-  </v-app>
+  </ClientLayout>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import { useAuth } from "@/utils/useAuth";
 import { useLoanApplications, useDashboardStats } from "@/utils/useSmartLoanApi";
 import { getCurrentUser } from "@/utils/useDirectus";
+import ClientLayout from "@/layouts/ClientLayout.vue";
 
 const router = useRouter();
-const { logout } = useAuth();
 
-const drawer = ref(true);
 const loading = ref(false);
 const showDetails = ref(false);
 const selectedLoan = ref<any>(null);
@@ -616,11 +531,6 @@ const loadLoans = async () => {
   } finally {
     loading.value = false;
   }
-};
-
-const handleLogout = async () => {
-  await logout();
-  router.push("/");
 };
 
 onMounted(async () => {
